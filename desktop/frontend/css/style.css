@@ -1,0 +1,319 @@
+/* Reseta as margens padrão do navegador */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #dcdcdc; /* Cor de fundo cinza da parte inferior */
+}
+
+
+/* ================= HEADER ================= */
+.cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-img {
+    height: 45px; /* Ajuste conforme o tamanho da sua logo */
+}
+
+.logo-texto {
+    display: flex;
+    flex-direction: column;
+    color: #666;
+}
+
+.texto-menor {
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.texto-maior {
+    font-size: 22px;
+    font-weight: bold;
+    color: #555;
+}
+
+.btn-acessar {
+    background-color: #c1000f;
+    color: #ffffff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    a {
+    text-decoration: none;
+    color: inherit;
+    }
+}
+
+.btn-acessar:hover {
+    background-color: #8b0000;
+}
+
+/* ================= SLIDER / BANNER ANIMADO ================= */
+.slider-container {
+    position: relative;
+    width: 100%;
+    height: 450px; /* Altura do banner */
+    overflow: hidden; /* Esconde o que estiver fora da tela */
+    background-color: #a8000a; /* Fundo base vermelho escuro */
+    
+    /* DICA: Para colocar a textura de células vermelhas no fundo de tudo: */
+    /* background-image: url('caminho-para-fundo-celulas.jpg'); */
+    /* background-size: cover; */
+    /* background-position: center; */
+}
+
+.slides-wrapper {
+    display: flex;
+    width: 300%; 
+    height: 100%;
+    transition: transform 0.6s ease-in-out; 
+}
+
+.slide {
+    width: 33.3333%; 
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 0 10%;
+}
+
+.slide-1 { background: radial-gradient(circle at left, #d01121, transparent 70%); }
+.slide-2 { background: radial-gradient(circle at right, #a8000a, transparent 70%); }
+.slide-3 { background: radial-gradient(circle at center, #900005, transparent 70%); }
+
+.conteudo-banner {
+    z-index: 2;
+    max-width: 50%;
+}
+
+.conteudo-banner h1 {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+
+.btn-acesse-aqui {
+    background-color: #ffffff;
+    color: #b3000b; /* Vermelho combinando com o fundo */
+    border: none;
+    padding: 10px 24px;
+    border-radius: 30px; /* Deixa o botão em formato de pílula */
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease, background-color 0.2s;
+}
+
+.btn-acesse-aqui:hover {
+    transform: scale(1.05);
+    background-color: #f0f0f0;
+}
+
+
+.imagem-banner {
+    position: absolute;
+    right: 5%;
+    bottom: 0;
+    height: 100%; 
+    z-index: 1;
+}
+
+.imagem-banner img {
+    height: 100%;
+    object-fit: cover;
+    object-position: bottom; 
+}
+
+/* ================= PONTOS DO CARROSSEL ================= */
+.carrossel-pontos {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+}
+
+.ponto {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+}
+
+/* ================= ÁREA INFERIOR ================= */
+.area-cinza {
+    height: 300px; 
+    background-color: #dcdcdc;
+}
+/* ================= TELA DE LOGIN ================= */
+
+/* Fundo da página de login */
+.body-login {
+    background: radial-gradient(circle, #e31828, #a8000a); /* Mesmo fundo do banner */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+}
+
+/* Header simplificado da tela de login */
+.header-simples {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+}
+
+.voltar-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+}
+
+.voltar-link:hover {
+    opacity: 0.8;
+}
+
+.logo-login {
+    height: 40px; /* Ajuste para o tamanho da sua logo branca ou colorida */
+}
+
+/* Contêiner principal para centralizar o card */
+.login-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* O Card branco do formulário */
+.login-card {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* Ícone de perfil no topo do card */
+.icone-usuario {
+    background-color: #f0f0f0;
+    color: #c1000f;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+    margin: 0 auto 20px auto;
+}
+
+.login-card h2 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.login-card p {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* Estilo dos Inputs */
+.input-box {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-box input {
+    width: 100%;
+    padding: 15px 45px 15px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.input-box input:focus {
+    border-color: #c1000f;
+}
+
+/* Ícones dentro dos inputs */
+.icon-input {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Botão Principal Entrar (Estilo Pílula) */
+.botaoPrin {
+    width: 100%;
+    background-color: #c1000f;
+    color: #ffffff;
+    border: none;
+    padding: 15px;
+    border-radius: 30px; /* Formato de pílula igual ao site */
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    margin-top: 10px;
+}
+
+.botaoPrin:hover {
+    background-color: #8b0000;
+    transform: scale(1.02);
+}

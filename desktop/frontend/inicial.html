@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/png" href="images/icon.ico">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriEsportiva São Camilo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="/desktop/frontend/css/style.css">
+</head>
+<body>
+
+    <header class="cabecalho">
+        <div class="logo-container">
+            <img src="/desktop/frontend/images/logo.png" alt="Logo NutriEsportiva São Camilo" class="logo-img">
+            </div>
+        </div>
+        <button class="btn-acessar"><a href="login.html">Acessar</a></button>
+    </header>
+
+   <section class="slider-container">
+        
+        <div class="slides-wrapper">
+            
+            <div class="slide slide-1">
+                <div class="conteudo-banner">
+                    <h1>NutriEsportiva<br>São Camilo</h1>
+                    <button class="btn-acesse-aqui">ACESSE AQUI</button>
+                </div>
+                <div class="imagem-banner">
+                    <img src="/desktop/frontend/images/correndo.png" alt="Atleta correndo">
+                </div>
+            </div>
+
+            <div class="slide slide-2">
+                <div class="conteudo-banner">
+                    <h1>Hidratação<br>Sob Medida</h1>
+                    <button class="btn-acesse-aqui">SAIBA MAIS</button>
+                </div>
+                <div class="imagem-banner">
+                    <img src="/desktop/frontend/images/bebendo.png" alt="Atleta bebendo água">
+                </div>
+            </div>
+
+            <div class="slide slide-3">
+                <div class="conteudo-banner">
+                    <h1>Dados Baseados<br>em Ciência</h1>
+                    <button class="btn-acesse-aqui">CONHEÇA</button>
+                </div>
+                <div class="imagem-banner">
+                    <img src="/desktop/frontend/images/analise.png" alt="Médica">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="carrossel-pontos">
+    <span class="ponto ativo" onclick="irParaSlide(0)"></span>
+    <span class="ponto" onclick="irParaSlide(1)"></span>
+    <span class="ponto" onclick="irParaSlide(2)"></span>
+        </div>
+    </section>
+
+    <section class="area-cinza"></section>
+    <script src="/desktop/frontend/js/slides.js"></script>
+</body>
+</html>
