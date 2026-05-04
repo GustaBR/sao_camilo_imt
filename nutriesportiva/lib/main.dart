@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/inicial.dart';
 
 void main() {
   runApp(const NutriesportApp());
@@ -39,14 +40,7 @@ class NutriesportApp extends StatelessWidget {
         ),
       ),
       
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'caso fiz certo tá pronto para receber as telas.',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+      home: const TelaLanding(),
     );
   }
 }
