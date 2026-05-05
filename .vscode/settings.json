@@ -1,0 +1,6 @@
+{
+    "cmake.ignoreCMakeListsMissing": true,
+    "files.autoSave": "afterDelay",
+    "dart.flutterHotReloadOnSave": "all"
+    
+}
