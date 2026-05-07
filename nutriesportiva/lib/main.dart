@@ -11,7 +11,7 @@ class NutriesportApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Nutriesportiva São Camilo',
+      title: 'Nutriesportiva',
       debugShowCheckedModeBanner: false, 
       theme: ThemeData(
         primaryColor: const Color(0xFFB30000),

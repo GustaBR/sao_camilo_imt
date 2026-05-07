@@ -14,40 +14,55 @@ class _TelaLandingState extends State<TelaLanding> {
   int _paginaAtual = 0;
   Timer? _timer;
 
-  final List<Map<String, String>> _slides = [
+  final List<Map<String, dynamic>> _slides = [
     {
-      "titulo": "NutriEsportiva\nSão Camilo",
+      "titulo": "NutriEsportiva",
       "botao": "ACESSE AQUI",
-      "imagem": "assets/images/correndo.png"
+      "imagem": "assets/images/correndo.png",
+      "acao": (BuildContext context) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TelaLogin()),
+        );
+      }
     },
     {
       "titulo": "Alta Performance\ne Hidratação",
       "botao": "SAIBA MAIS",
-      "imagem": "assets/images/bebendo.png"
+      "imagem": "assets/images/bebendo.png",
+      "acao": (BuildContext context) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("se vc viu ta funcionando")),
+        );
+      }
     },
     {
       "titulo": "Acompanhamento\nProfissional",
       "botao": "CONHEÇA",
-      "imagem": "assets/images/analise.png"
+      "imagem": "assets/images/analise.png",
+      "acao": (BuildContext context) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("se vc viu ta funcionando 2")),
+        );
+      }
     }
   ];
-
-  @override
-  void initState() {
-    super.initState();
+  void _reiniciarTimer() {
+    _timer?.cancel(); 
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      if (_paginaAtual < _slides.length - 1) {
-        _paginaAtual++;
-      } else {
-        _paginaAtual = 0;
-      }
-
+      int proximaPagina = _paginaAtual < _slides.length - 1 ? _paginaAtual + 1 : 0;  
       _pageController.animateToPage(
-        _paginaAtual,
+        proximaPagina,
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOut,
       );
     });
+  }
+
+@override
+  void initState() {
+    super.initState();
+    _reiniciarTimer(); 
   }
 
   @override
@@ -131,12 +146,14 @@ class _TelaLandingState extends State<TelaLanding> {
               setState(() {
                 _paginaAtual = index;
               });
+            _reiniciarTimer(); 
             },
             itemCount: _slides.length,
             itemBuilder: (context, index) {
               return _buildConteudoSlide(_slides[index], isDesktop);
             },
           ),
+    
           Positioned(
             bottom: 30,
             left: 0,
@@ -174,7 +191,7 @@ class _TelaLandingState extends State<TelaLanding> {
     );
   }
 
-  Widget _buildConteudoSlide(Map<String, String> slide, bool isDesktop) {
+  Widget _buildConteudoSlide(Map<String, dynamic> slide, bool isDesktop) {
     return Padding(
       padding: EdgeInsets.only(
         left: isDesktop ? MediaQuery.of(context).size.width * 0.15 : 20.0,
@@ -189,7 +206,6 @@ class _TelaLandingState extends State<TelaLanding> {
                   child: _buildTextAndButton(slide, isDesktop),
                 ),
                 Expanded(
-                  // MUDANÇA AQUI: Em vez de Center, usamos Align para colar a imagem no chão
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: Image.asset(
@@ -223,7 +239,7 @@ class _TelaLandingState extends State<TelaLanding> {
     );
   }
 
-  Widget _buildTextAndButton(Map<String, String> slide, bool isDesktop) {
+  Widget _buildTextAndButton(Map<String, dynamic> slide, bool isDesktop) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
@@ -249,7 +265,11 @@ class _TelaLandingState extends State<TelaLanding> {
             ),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           ),
-          onPressed: () {},
+            onPressed: () {
+            if (slide.containsKey("acao") && slide["acao"] != null) {
+              slide["acao"](context);
+            }
+          },
           child: Text(
             slide["botao"]!,
             style: TextStyle(
