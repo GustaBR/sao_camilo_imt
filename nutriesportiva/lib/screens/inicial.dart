@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'login.dart';
 
 class TelaLanding extends StatefulWidget {
   const TelaLanding({super.key});
@@ -102,7 +103,12 @@ class _TelaLandingState extends State<TelaLanding> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               padding: EdgeInsets.symmetric(horizontal: isDesktop ? 30 : 15),
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TelaLogin()),
+              );
+            },
             child: Text("Acessar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: isDesktop ? 14 : 12)),
           ),
         )
