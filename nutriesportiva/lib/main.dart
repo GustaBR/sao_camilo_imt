@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screens/inicial.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  await Supabase.initialize(
+    url: 'https://kmvqcogjcwkspejfwvko.supabase.co',
+    anonKey: 'sb_publishable_7MYZxoaWKmJwof-YFzvdJA_R6BeBHTF',
+  );
   runApp(const NutriesportApp());
 }
 

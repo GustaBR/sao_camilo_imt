@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'login.dart';
+import 'teste_logado.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TelaLanding extends StatefulWidget {
   const TelaLanding({super.key});
@@ -63,6 +65,16 @@ class _TelaLandingState extends State<TelaLanding> {
   void initState() {
     super.initState();
     _reiniciarTimer(); 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final usuario = Supabase.instance.client.auth.currentUser;
+      
+      if (usuario != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TesteLogado()),
+        );
+      }
+    });
   }
 
   @override

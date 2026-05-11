@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'teste_logado.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -11,7 +13,22 @@ class _TelaLoginState extends State<TelaLogin> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-
+@override
+  void initState() {
+    super.initState();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final usuario = Supabase.instance.client.auth.currentUser;
+      
+      if (usuario != null) {
+        // Se já tiver logado, bloqueia a tela de login e joga direto pro Painel!
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const TesteLogado()),
+        );
+      }
+    });
+  }
   @override
   void dispose() {
     _emailController.dispose();
@@ -19,10 +36,50 @@ class _TelaLoginState extends State<TelaLogin> {
     super.dispose();
   }
 
-  void _fazerLogin() {
+Future<void> _fazerLogin() async {
     if (_formKey.currentState!.validate()) {
-      print('Email digitado: ${_emailController.text}');
-      print('Senha digitada: ${_senhaController.text}');
+      try {
+        final AuthResponse res = await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text.trim(), 
+          password: _senhaController.text,
+        );
+
+        final User? usuario = res.user;
+
+        if (usuario != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Login efetuado com sucesso!"),
+              backgroundColor: Colors.green,
+            ), 
+          );   
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const TesteLogado()),
+          );
+                
+        }
+        
+        
+      } on AuthException catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Erro: E-mail ou senha incorretos."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (erro) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Erro inesperado: $erro"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
