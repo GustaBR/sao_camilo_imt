@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'home.dart';
+
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -20,11 +22,13 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   void _fazerLogin() {
-    if (_formKey.currentState!.validate()) {
-      print('Email digitado: ${_emailController.text}');
-      print('Senha digitada: ${_senhaController.text}');
-    }
+  if (_formKey.currentState!.validate()) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MyHomePage()),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
