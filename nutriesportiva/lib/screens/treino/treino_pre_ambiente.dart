@@ -132,7 +132,7 @@ class _TreinoPreAmbienteState extends State<TreinoPreAmbiente> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _exposicaoSolar,
+                initialValue: _exposicaoSolar,
                 decoration: const InputDecoration(
                   labelText: 'Exposição solar',
                   border: OutlineInputBorder(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cadastro.dart';
 import 'home.dart';
 
 
@@ -59,7 +60,11 @@ class _TelaLoginState extends State<TelaLogin> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset('assets/images/logo.png', height: 60),
+                Image.asset(
+                  'assets/images/logo_hydrotrack_horizontal.png',
+                  height: 110,
+                  fit: BoxFit.contain,
+                ),
                 const SizedBox(height: 30),
                 TextFormField(
                   controller: _emailController,
@@ -105,6 +110,16 @@ class _TelaLoginState extends State<TelaLogin> {
                     ),
                     child: const Text('ENTRAR', style: TextStyle(fontSize: 16)),
                   ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TelaCadastro()),
+                    );
+                  },
+                  child: const Text('Criar uma conta'),
                 ),
               ],
             ),

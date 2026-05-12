@@ -99,11 +99,16 @@ class _TelaLandingState extends State<TelaLanding> {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
+      toolbarHeight: isDesktop ? 82 : 70,
       title: Padding(
         padding: EdgeInsets.only(left: isDesktop ? 40.0 : 10.0),
         child: Row(
           children: [
-            Image.asset('assets/images/logo.png', height: isDesktop ? 40 : 30),
+            Image.asset(
+              'assets/images/logo_hydrotrack_horizontal.png',
+              height: isDesktop ? 58 : 44,
+              fit: BoxFit.contain,
+            ),
             const SizedBox(width: 15),  
           ],
         ),
@@ -177,7 +182,7 @@ class _TelaLandingState extends State<TelaLanding> {
                       width: _paginaAtual == index ? 12 : 8,
                       height: _paginaAtual == index ? 12 : 8,
                       decoration: BoxDecoration(
-                        color: _paginaAtual == index ? Colors.white : Colors.white.withOpacity(0.4),
+                        color: _paginaAtual == index ? Colors.white : Colors.white.withValues(alpha: 0.4),
                         shape: BoxShape.circle,
                       ),
                     ),
