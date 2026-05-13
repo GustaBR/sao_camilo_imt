@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 .dart_tool
+.env
+.env.*
+backend/.env
+!backend/.env.example
 
 # Symbolication related
 app.*.symbols
