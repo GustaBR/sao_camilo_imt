@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/inicial.dart';
+import 'package:nutriesportiva/screens/treino/treino_pre_sessao.dart';
 
 void main() {
   runApp(const NutriesportApp());
@@ -40,7 +40,7 @@ class NutriesportApp extends StatelessWidget {
         ),
       ),
       
-      home: const TelaLanding(),
+      home: const TreinoPreSessao(),
     );
   }
 }
