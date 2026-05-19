@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nutriesportiva/screens/treino/treino_pre_sessao.dart';
+import 'screens/treino/treino_pre_sessao.dart';
 
 void main() {
   runApp(const NutriesportApp());

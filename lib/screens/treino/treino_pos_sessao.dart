@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../home.dart';
 
 class TreinoPosSessao extends StatefulWidget {
   const TreinoPosSessao({super.key});
@@ -69,8 +68,8 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => const MyHomePage(
-            mostrarMensagemTreinoSalvo: true,
+          builder: (context) => const Scaffold(
+            body: Text("Treino concluído."), // Placeholder
           ),
         ),
         (route) => false,
