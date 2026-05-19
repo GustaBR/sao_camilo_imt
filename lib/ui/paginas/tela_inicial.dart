@@ -11,7 +11,19 @@ class _TelaInicialState extends State<TelaInicial> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text("Tela Inicial"),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) {
+                return const Text("Tela de treino");
+              }
+            ),
+          );
+        },
+        child: Text("Novo treino"),
+      ),
     );
   }
 }

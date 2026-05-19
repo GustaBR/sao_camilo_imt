@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widget_tree.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -10,6 +11,8 @@ class TelaLogin extends StatefulWidget {
 class _TelaLoginState extends State<TelaLogin> {
   TextEditingController nomeController = TextEditingController();
   TextEditingController emailController = TextEditingController();
+  TextEditingController senhaController = TextEditingController();
+  TextEditingController repetirSenhaController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -65,57 +68,134 @@ class _TelaLoginState extends State<TelaLogin> {
                   ],
                 ),
               ),
-              Column(
-                spacing: 10.0,
-                children: [
-                  TextField(
-                    controller: nomeController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10.0),
+              Padding(
+                padding: EdgeInsetsGeometry.only(
+                  right: 30.0,
+                  left: 30.0,
+                ),
+                child: Column(
+                  spacing: 10.0,
+                  children: [
+                    TextField(
+                      controller: nomeController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10.0),
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Color.fromRGBO(234, 234, 234, 1.0),
+                        hint: Text(
+                          "Nome Completo",
+                          style: TextStyle(
+                            color: Color.fromRGBO(64, 64, 64, 1.0),
+                          ),
                         ),
                       ),
-                      filled: true,
-                      fillColor: Color.fromRGBO(234, 234, 234, 1.0),
-                      hint: Text(
-                        "Nome Completo",
-                        style: TextStyle(
-                          color: Color.fromRGBO(64, 64, 64, 1.0),
-                        ),
-                      ),
+                      onChanged: (valor) {
+                        setState(() {});
+                      },
                     ),
-                    onChanged: (valor) {
-                      setState(() {});
-                    },
-                  ),
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10.0),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10.0),
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Color.fromRGBO(234, 234, 234, 1.0),
+                        hint: Text(
+                          "E-mail institucional",
+                          style: TextStyle(
+                            color: Color.fromRGBO(64, 64, 64, 1.0),
+                          ),
                         ),
                       ),
-                      filled: true,
-                      fillColor: Color.fromRGBO(234, 234, 234, 1.0),
-                      hint: Text(
-                        "E-mail institucional",
-                        style: TextStyle(
-                          color: Color.fromRGBO(64, 64, 64, 1.0),
-                        ),
-                      ),
+                      onChanged: (valor) {
+                        setState(() {});
+                      },
                     ),
-                    onChanged: (valor) {
-                      setState(() {});
-                    },
-                  ),
-                  Text(nomeController.text),
-                  Text(emailController.text),
-                ],
+                    TextField(
+                      controller: senhaController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10.0),
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Color.fromRGBO(234, 234, 234, 1.0),
+                        hint: Text(
+                          "Senha institucional",
+                          style: TextStyle(
+                            color: Color.fromRGBO(64, 64, 64, 1.0),
+                          ),
+                        ),
+                      ),
+                      onChanged: (valor) {
+                        setState(() {});
+                      },
+                    ),
+                    TextField(
+                      controller: repetirSenhaController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10.0),
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Color.fromRGBO(234, 234, 234, 1.0),
+                        hint: Text(
+                          "Repita a senha",
+                          style: TextStyle(
+                            color: Color.fromRGBO(64, 64, 64, 1.0),
+                          ),
+                        ),
+                      ),
+                      onChanged: (valor) {
+                        setState(() {});
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        fixedSize: WidgetStatePropertyAll<Size>(Size(
+                          250.0,
+                          40.0)
+                        ),
+                        backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+                          (Set<WidgetState> states) {
+                            return Color.fromRGBO(195, 0, 10, 1.0);
+                          }
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => const WidgetTree(),
+                          )
+                        );
+                      },
+                      child: Text(
+                        "Continuar",
+                        style: TextStyle(
+                            color: Color.fromRGBO(255, 255, 255, 1.0),
+                          ),
+                        )
+                    ),
+                  ],
+                ),
               ),
+              Text(nomeController.text),
+              Text(emailController.text),
             ],
           ),
         ),
