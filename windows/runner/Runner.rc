@@ -90,12 +90,21 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
+<<<<<<< HEAD
             VALUE "FileDescription", "nutridepor" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "nutridepor" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "nutridepor.exe" "\0"
             VALUE "ProductName", "nutridepor" "\0"
+=======
+            VALUE "FileDescription", "sao_camilo_imt" "\0"
+            VALUE "FileVersion", VERSION_AS_STRING "\0"
+            VALUE "InternalName", "sao_camilo_imt" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "OriginalFilename", "sao_camilo_imt.exe" "\0"
+            VALUE "ProductName", "sao_camilo_imt" "\0"
+>>>>>>> origin/teste/template-flutter
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

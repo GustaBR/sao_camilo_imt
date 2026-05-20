@@ -8,35 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  int counter = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Counter')),
-        body: Center(
-          child: Text(
-            '$counter',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => setState(() => counter++),
-          child: const Icon(Icons.add),
-        ),
-      ),
-    );
-  }
-}
+import 'package:sao_camilo_imt/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="nutridepor"
+        android:label="sao_camilo_imt"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
