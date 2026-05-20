@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/treino/treino_pre_sessao.dart';
-import 'screens/treino/cadastro_page.dart';
+import 'screens/treino/dashboard_page.dart';
 
 void main() {
   runApp(const NutriesportApp());
@@ -41,7 +40,7 @@ class NutriesportApp extends StatelessWidget {
         ),
       ),
       
-      home: const CadastroPage (),
+      home: const DashboardPage(),
     );
   }
 }
