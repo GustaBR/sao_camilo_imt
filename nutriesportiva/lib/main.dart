@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/inicial.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/cadastro.dart';
 
 Future<void> main() async {
   await Supabase.initialize(
@@ -45,7 +46,7 @@ class NutriesportApp extends StatelessWidget {
         ),
       ),
       
-      home: const TelaLanding(),
+      home: const CadastroPage(),
     );
   }
 }
