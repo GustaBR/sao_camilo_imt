@@ -22,7 +22,9 @@ class _CadastroPageState extends State<CadastroPage> {
 
   final TextEditingController _crmController = TextEditingController();
   final TextEditingController _crnController = TextEditingController();
-  final TextEditingController _dataNascController = TextEditingController(); 
+  final TextEditingController _dataNascController = TextEditingController();
+  final TextEditingController _altController = TextEditingController();
+
 
   String _perfilSelecionado = 'Atleta'; 
   bool _senhaOculta = true;
@@ -361,6 +363,34 @@ class _CadastroPageState extends State<CadastroPage> {
               return null;
             },
           ),
+        
+        const SizedBox(height: 16),
+        TextFormField(
+            controller: _altController,
+            maxLength: 4,
+            decoration: const InputDecoration(
+              labelText: 'Altura (m)', 
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.straighten,), 
+              counterText: '',
+            ),
+            validator: (value) => value == null || value.isEmpty ? 'Informe sua altura' : null,
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+          decoration: const InputDecoration(
+            labelText: 'Sexo',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.assignment_ind),
+          ),
+          items: <String>['Masculino', 'Feminino', 'Prefiro não informar']
+              .map((String value) => DropdownMenuItem<String>(value: value, child: Text(value)))
+              .toList(),
+          onChanged: (String? novoSexo) {
+            setState(() {
+            });
+          },
+        ),
       ],
     );
   }
