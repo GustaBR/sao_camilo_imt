@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -12,7 +13,6 @@ class CadastroPage extends StatefulWidget {
 class _CadastroPageState extends State<CadastroPage> {
   final _formKey = GlobalKey<FormState>();
   
-
   int _passoAtual = 0;
 
   final TextEditingController _nomeController = TextEditingController();
@@ -24,9 +24,21 @@ class _CadastroPageState extends State<CadastroPage> {
   final TextEditingController _crnController = TextEditingController();
   final TextEditingController _dataNascController = TextEditingController();
   final TextEditingController _altController = TextEditingController();
+  
+  final _dataMaskFormatter = MaskTextInputFormatter(
+    mask: '##/##/####', 
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
 
+  final _alturaMaskFormatter = MaskTextInputFormatter(
+    mask: '#,##', 
+    filter: { "#": RegExp(r'[0-9]') },
+    type: MaskAutoCompletionType.lazy,
+  );
 
   String _perfilSelecionado = 'Atleta'; 
+  String _sexoSelecionado = 'Prefiro não informar'; 
   bool _senhaOculta = true;
   bool _confirmarSenhaOculta = true;
 
@@ -39,6 +51,7 @@ class _CadastroPageState extends State<CadastroPage> {
     _crmController.dispose();
     _crnController.dispose();
     _dataNascController.dispose(); 
+    _altController.dispose(); 
     super.dispose();
   }
 
@@ -111,22 +124,26 @@ class _CadastroPageState extends State<CadastroPage> {
             dataProBanco = '${partesData[2]}-${partesData[1]}-${partesData[0]}';
           }
 
+          
+          double alturaParsed = double.tryParse(_altController.text.replaceAll(',', '.')) ?? 0.0;
+
           await Supabase.instance.client.schema('nutri_esportiva').from('atletas').insert({
             'id': pessoaId,
-            'altura': 0.0,
+            'altura': alturaParsed, 
             'data_nasc': dataProBanco, 
-            'sexo': 'Não informado'
+            'sexo': _sexoSelecionado 
           });
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Conta criada com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        Navigator.pop(context); 
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Conta criada com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context); 
+        }
       }
     } on AuthException catch (erro) {
       if (mounted) {
@@ -343,54 +360,98 @@ class _CadastroPageState extends State<CadastroPage> {
             validator: (value) => value == null || value.isEmpty ? 'Informe seu CRM' : null,
           ),
           
-        if (_perfilSelecionado == 'Atleta') 
+       if (_perfilSelecionado == 'Atleta') ...[
           TextFormField(
             controller: _dataNascController,
-            maxLength: 10,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9/]')), 
-            ],
+            inputFormatters: [_dataMaskFormatter], 
             decoration: const InputDecoration(
               labelText: 'Data de Nascimento (DD/MM/AAAA)', 
               border: OutlineInputBorder(), 
               prefixIcon: Icon(Icons.calendar_today),
-              counterText: '',
             ),
             keyboardType: TextInputType.datetime,
             validator: (value) {
               if (value == null || value.isEmpty) return 'Informe a data';
               if (value.length != 10) return 'Digite a data completa';
-              return null;
+
+              // Dividindo a string DD/MM/AAAA
+              List<String> partes = value.split('/');
+              int dia = int.tryParse(partes[0]) ?? 0;
+              int mes = int.tryParse(partes[1]) ?? 0;
+              int ano = int.tryParse(partes[2]) ?? 0;
+
+              if (dia < 1 || dia > 31 || mes < 1 || mes > 12 || ano < 1900) {
+                return 'Data inválida';
+              }
+
+              DateTime dataNasc = DateTime(ano, mes, dia);
+              
+              if (dataNasc.year != ano || dataNasc.month != mes || dataNasc.day != dia) {
+                return 'Data inexistente no calendário';
+              }
+
+              DateTime hoje = DateTime.now();
+              if (dataNasc.isAfter(hoje)) {
+                return 'Você não pode ter nascido no futuro!';
+              }
+
+              int idade = hoje.year - dataNasc.year;
+              if (hoje.month < dataNasc.month || (hoje.month == dataNasc.month && hoje.day < dataNasc.day)) {
+                idade--;
+              }
+
+              
+              if (idade < 5) return 'A idade mínima é 5 anos';
+              if (idade > 120) return 'Idade limite excedida (120 anos)';
+
+              return null; 
             },
           ),
-        
-        const SizedBox(height: 16),
-        TextFormField(
+          TextFormField(
             controller: _altController,
-            maxLength: 4,
+            inputFormatters: [_alturaMaskFormatter], 
             decoration: const InputDecoration(
               labelText: 'Altura (m)', 
               border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.straighten,), 
-              counterText: '',
+              prefixIcon: Icon(Icons.straighten), 
             ),
-            validator: (value) => value == null || value.isEmpty ? 'Informe sua altura' : null,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Informe sua altura';
+              if (value.length != 4) return 'Digite no formato X,XX';
+
+              double alturaParsed = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+
+              if (alturaParsed < 0.50) {
+                return 'Altura muito baixa (mín. 0,50m)';
+              }
+              if (alturaParsed > 2.50) {
+                return 'Altura muito alta (máx. 2,50m)';
+              }
+
+              return null; 
+            },
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Sexo',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.assignment_ind),
+            value: _sexoSelecionado,
+            decoration: const InputDecoration(
+              labelText: 'Sexo',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.people),
+            ),
+            items: <String>['Masculino', 'Feminino', 'Prefiro não informar']
+                .map((String value) => DropdownMenuItem<String>(value: value, child: Text(value)))
+                .toList(),
+            onChanged: (String? novoSexo) {
+              if (novoSexo != null) {
+                setState(() {
+                  _sexoSelecionado = novoSexo;
+                });
+              }
+            },
           ),
-          items: <String>['Masculino', 'Feminino', 'Prefiro não informar']
-              .map((String value) => DropdownMenuItem<String>(value: value, child: Text(value)))
-              .toList(),
-          onChanged: (String? novoSexo) {
-            setState(() {
-            });
-          },
-        ),
+        ],
       ],
     );
   }
