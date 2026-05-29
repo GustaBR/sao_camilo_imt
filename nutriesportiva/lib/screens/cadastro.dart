@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'teste_logado.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -135,14 +136,18 @@ class _CadastroPageState extends State<CadastroPage> {
           });
         }
         
-        if (mounted) {
+if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Conta criada com sucesso!'),
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context); 
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const TesteLogado()),
+            (Route<dynamic> route) => false, 
+          );
         }
       }
     } on AuthException catch (erro) {
