@@ -1,8 +1,7 @@
-// pages/dashboard_profissional_page.dart
+// lib/screens/pages/dashboard_profissional_page.dart
 import 'package:flutter/material.dart';
-import '../models/sessao_treino.dart';
-// No topo do seu dashboard_page.dart
-import '../services/atleta_data_manager.dart';
+import '../../models/sessao_treino.dart';
+
 class DashboardProfissionalPage extends StatelessWidget {
   final String tipoProfissional;
   final String codigoAtleta;
@@ -23,11 +22,10 @@ class DashboardProfissionalPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('$nomeAtleta - ${_getTitulo()}'),
         backgroundColor: _getCor(),
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
@@ -40,7 +38,7 @@ class DashboardProfissionalPage extends StatelessWidget {
       case 'medico':
         return 'Visão Médica';
       case 'instrutor':
-        return 'Visão do Instrutor';
+        return 'Desempenho';
       case 'nutricionista':
         return 'Análise Nutricional';
       default:
@@ -62,6 +60,27 @@ class DashboardProfissionalPage extends StatelessWidget {
   }
 
   Widget _buildDashboard() {
+    if (sessoes.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.info_outline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'Nenhum treino registrado ainda',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'O atleta $nomeAtleta ainda não finalizou nenhum treino.',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     switch (tipoProfissional) {
       case 'medico':
         return _buildMedicoDashboard();
@@ -76,56 +95,122 @@ class DashboardProfissionalPage extends StatelessWidget {
 
   // ==================== DASHBOARD MÉDICO ====================
   Widget _buildMedicoDashboard() {
+    final alertas = sessoes.where((s) => 
+      s.teveSintomasGastro || 
+      s.escalaBorg >= 15 || 
+      s.teveFadiga ||
+      s.percentualPerdaMassa > 2
+    ).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Acompanhamento Médico",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          _buildInfoCard(
+            titulo: 'Total de sessões',
+            valor: sessoes.length.toString(),
+            icone: Icons.calendar_today,
+            cor: const Color(0xFFB30000),
+          ),
+          const SizedBox(height: 16),
+          
+          Text(
+            'Alertas Clínicos',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
           ),
           const SizedBox(height: 8),
-          Text("${sessoes.length} sessões registradas"),
-          const SizedBox(height: 24),
-
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.warning_amber, color: Colors.orange),
-                      SizedBox(width: 8),
-                      Text("Alertas Clínicos", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    ],
+          
+          if (alertas.isEmpty)
+            Card(
+              color: Colors.green[50],
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 12),
+                    Text('Nenhum alerta clínico nas últimas sessões'),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: alertas.length,
+              itemBuilder: (context, index) {
+                final s = alertas[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: Colors.red[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '⚠️ ${s.dataFormatada} - ${s.modalidade}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        if (s.teveSintomasGastro) 
+                          const Text('• Sintomas gastrointestinais'),
+                        if (s.escalaBorg >= 15) 
+                          Text('• Esforço muito intenso (Borg ${s.escalaBorg})'),
+                        if (s.teveFadiga) 
+                          Text('• Fadiga: ${s.fadigaDescricao}'),
+                        if (s.percentualPerdaMassa > 2)
+                          Text('• Perda de massa >2% (${s.percentualPerdaMassa.toStringAsFixed(1)}%)'),
+                      ],
+                    ),
                   ),
-                  const Divider(),
-                  ...sessoes.where((s) => s.teveSintomasGastro || s.escalaBorg >= 15).map((sessao) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                );
+              },
+            ),
+          
+          const SizedBox(height: 16),
+          Text(
+            'Histórico Completo',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
+          ),
+          const SizedBox(height: 8),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sessoes.length,
+            itemBuilder: (context, index) {
+              final s = sessoes[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ExpansionTile(
+                  leading: Icon(Icons.medical_information, color: _getCor()),
+                  title: Text('${s.dataFormatada} - ${s.modalidade}'),
+                  subtitle: Text('Borg: ${s.escalaBorg} | Perda: ${s.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("📅 ${sessao.data.substring(0, 10)} - ${sessao.modalidade}",
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
-                          if (sessao.teveSintomasGastro) const Text("⚠️ Sintomas gastrointestinais"),
-                          if (sessao.escalaBorg >= 15) Text("⚠️ Esforço muito intenso (Borg ${sessao.escalaBorg})"),
-                          if (sessao.teveFadiga) Text("⚠️ Fadiga reportada: ${sessao.fadigaDescricao}"),
-                          const Divider(),
+                          _buildDetailRow('Massa pré', '${s.massaCorporalPreKg} kg'),
+                          _buildDetailRow('Massa pós', '${s.massaCorporalPosKg} kg'),
+                          _buildDetailRow('Perda de massa', '${s.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                          _buildDetailRow('Escala de Borg', s.escalaBorg.toString()),
+                          _buildDetailRow('Sintomas gastro', s.teveSintomasGastro ? 'Sim' : 'Não'),
+                          if (s.teveSintomasGastro)
+                            _buildDetailRow('Descrição gastro', s.sintomasGastroDescricao),
+                          _buildDetailRow('Fadiga', s.teveFadiga ? 'Sim' : 'Não'),
+                          if (s.teveFadiga) _buildDetailRow('Descrição fadiga', s.fadigaDescricao),
+                          _buildDetailRow('Roupas encharcadas', s.roupasEncharcadas ? 'Sim' : 'Não'),
                         ],
                       ),
-                    );
-                  }),
-                  if (sessoes.where((s) => s.teveSintomasGastro || s.escalaBorg >= 15).isEmpty)
-                    const Text("Nenhum alerta médico nas últimas sessões.", style: TextStyle(color: Colors.green)),
-                ],
-              ),
-            ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -135,41 +220,66 @@ class DashboardProfissionalPage extends StatelessWidget {
   // ==================== DASHBOARD INSTRUTOR ====================
   Widget _buildInstrutorDashboard() {
     SessaoTreino? ultima = sessoes.isNotEmpty ? sessoes.first : null;
+    
+    double mediaDuracao = sessoes.fold(0, (sum, s) => sum + s.duracaoRealSegundos) / sessoes.length / 60;
+    double mediaBorg = sessoes.fold(0, (sum, s) => sum + s.escalaBorg) / sessoes.length;
+    double mediaPerda = sessoes.fold(0.0, (sum, s) => sum + s.percentualPerdaMassa) / sessoes.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Desempenho do Atleta",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Text(
+            'Resumo do Atleta',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
           ),
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              Expanded(child: _buildMetricCard('Sessões', sessoes.length.toString(), Icons.history, Colors.blue)),
+              Expanded(child: _buildMetricCard('Média Duração', '${mediaDuracao.toStringAsFixed(0)} min', Icons.timer, Colors.blue)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildMetricCard('Média Borg', mediaBorg.toStringAsFixed(1), Icons.speed, Colors.blue)),
+              Expanded(child: _buildMetricCard('Média Perda', '${mediaPerda.toStringAsFixed(1)}%', Icons.monitor_weight, Colors.blue)),
+            ],
+          ),
+          
           const SizedBox(height: 24),
-
-          if (ultima != null) ...[
-            _buildMetricCard("Última sessão", ultima.modalidade, Icons.directions_run, Colors.blue),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildMetricCard("Duração real", _formatDuration(ultima.duracaoRealSegundos), Icons.timer, Colors.blue)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildMetricCard("Intensidade (Borg)", ultima.escalaBorg.toString(), Icons.speed, Colors.blue)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildMetricCard("Perda de massa", "${ultima.percentualPerdaMassa.toStringAsFixed(1)}%", Icons.monitor_weight, Colors.blue)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildMetricCard("Taxa sudorese", "${ultima.taxaSudorese.toStringAsFixed(1)} L/h", Icons.water_drop, Colors.blue)),
-              ],
-            ),
-          ],
-
-          const SizedBox(height: 24),
-          const Text("Histórico de sessões", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            'Última Sessão',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
+          ),
           const SizedBox(height: 8),
+          
+          if (ultima != null)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildDetailRow('Data', ultima.dataFormatada),
+                    _buildDetailRow('Modalidade', ultima.modalidade),
+                    _buildDetailRow('Duração', '${ultima.duracaoRealSegundos ~/ 60} min'),
+                    _buildDetailRow('Borg', ultima.escalaBorg.toString()),
+                    _buildDetailRow('Perda de massa', '${ultima.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                  ],
+                ),
+              ),
+            ),
+          
+          const SizedBox(height: 16),
+          Text(
+            'Histórico de Sessões',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
+          ),
+          const SizedBox(height: 8),
+          
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -177,11 +287,12 @@ class DashboardProfissionalPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = sessoes[index];
               return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: const Icon(Icons.fitness_center, color: Colors.blue),
-                  title: Text("${s.modalidade} - ${s.data.substring(0, 10)}"),
-                  subtitle: Text("Duração: ${_formatDuration(s.duracaoRealSegundos)} | Borg: ${s.escalaBorg}"),
+                  title: Text('${s.dataFormatada} - ${s.modalidade}'),
+                  subtitle: Text('Duração: ${s.duracaoRealSegundos ~/ 60} min | Borg: ${s.escalaBorg}'),
+                  trailing: Text('${s.percentualPerdaMassa.toStringAsFixed(1)}%'),
                 ),
               );
             },
@@ -201,9 +312,9 @@ class DashboardProfissionalPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Análise Nutricional",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Text(
+            'Análise Nutricional',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _getCor()),
           ),
           const SizedBox(height: 24),
 
@@ -216,10 +327,12 @@ class DashboardProfissionalPage extends StatelessWidget {
                 children: [
                   const Icon(Icons.local_drink, size: 48, color: Colors.green),
                   const SizedBox(height: 12),
-                  Text("Média de ingestão: ${mediaFluidos.toStringAsFixed(0)} mL",
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Média de ingestão: ${mediaFluidos.toStringAsFixed(0)} mL',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
-                  Text("Total de fluidos: $totalFluidos mL"),
+                  Text('Total de fluidos: $totalFluidos mL'),
                   const SizedBox(height: 16),
                   LinearProgressIndicator(
                     value: mediaFluidos / 1000,
@@ -228,15 +341,25 @@ class DashboardProfissionalPage extends StatelessWidget {
                     minHeight: 10,
                   ),
                   const SizedBox(height: 8),
-                  Text(mediaFluidos >= 700 ? "✅ Hidratação adequada" : "⚠️ Ingestão abaixo do recomendado"),
+                  Text(
+                    mediaFluidos >= 700 ? '✅ Hidratação adequada' : '⚠️ Ingestão abaixo do recomendado',
+                    style: TextStyle(
+                      color: mediaFluidos >= 700 ? Colors.green : Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
 
           const SizedBox(height: 24),
-          const Text("Detalhamento por sessão", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            'Detalhamento por sessão',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getCor()),
+          ),
           const SizedBox(height: 8),
+          
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -244,14 +367,18 @@ class DashboardProfissionalPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = sessoes[index];
               return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: s.fluidosIngeridosMl >= 700 ? Colors.green : Colors.orange,
-                    child: Text("${s.fluidosIngeridosMl ~/ 100}", style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text(
+                      '${s.fluidosIngeridosMl ~/ 100}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
-                  title: Text("${s.modalidade} - ${s.data.substring(0, 10)}"),
-                  subtitle: Text("Ingestão: ${s.fluidosIngeridosMl} mL | ${s.nivelHidratacao}"),
+                  title: Text('${s.dataFormatada} - ${s.modalidade}'),
+                  subtitle: Text('Ingestão: ${s.fluidosIngeridosMl} mL | ${s.nivelHidratacao}'),
+                  trailing: Text('${s.taxaSudorese.toStringAsFixed(1)} L/h'),
                 ),
               );
             },
@@ -261,15 +388,42 @@ class DashboardProfissionalPage extends StatelessWidget {
     );
   }
 
+  // ==================== WIDGETS AUXILIARES ====================
+  Widget _buildInfoCard({
+    required String titulo, 
+    required String valor, 
+    required IconData icone, 
+    required Color cor
+  }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icone, size: 32, color: cor),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: const TextStyle(color: Colors.black54)),
+                Text(valor, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cor)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMetricCard(String titulo, String valor, IconData icone, Color cor) {
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            Icon(icone, color: cor),
+            Icon(icone, color: cor, size: 28),
             const SizedBox(height: 8),
             Text(titulo, style: const TextStyle(fontSize: 12, color: Colors.black54), textAlign: TextAlign.center),
             Text(valor, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -279,11 +433,19 @@ class DashboardProfissionalPage extends StatelessWidget {
     );
   }
 
-  String _formatDuration(int segundos) {
-    int minutos = segundos ~/ 60;
-    if (minutos < 60) return "$minutos min";
-    int horas = minutos ~/ 60;
-    minutos = minutos % 60;
-    return "$horas h ${minutos} min";
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black54)),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
   }
 }
