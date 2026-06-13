@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
-from backend.config.database import engine
-
 router = APIRouter(tags=["health"])
 
 
@@ -13,6 +11,8 @@ def health_check():
 
 @router.get("/db")
 def database_health_check():
+    from backend.config.database import engine
+
     try:
         with engine.connect() as connection:
             connection.execute(text("select 1"))
