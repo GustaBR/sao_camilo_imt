@@ -4,27 +4,27 @@ import '../models/sessao_treino.dart';
 import '../models/nota.dart';
 import 'adicionar_nota_page.dart';
 
-class DetalhesAlunoPage extends StatefulWidget {
-  final String alunoNome;
-  final String alunoCodigo;
+class DetalhesAtletaPage extends StatefulWidget {
+  final String atletaNome;
+  final String atletaCodigo;
   final String profissionalTipo;
   final Color cor;
   final List<SessaoTreino> treinos;
 
-  const DetalhesAlunoPage({
+  const DetalhesAtletaPage({
     super.key,
-    required this.alunoNome,
-    required this.alunoCodigo,
+    required this.atletaNome,
+    required this.atletaCodigo,
     required this.profissionalTipo,
     required this.cor,
     required this.treinos,
   });
 
   @override
-  State<DetalhesAlunoPage> createState() => _DetalhesAlunoPageState();
+  State<DetalhesAtletaPage> createState() => _DetalhesAtletaPageState();
 }
 
-class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
+class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<SessaoTreino> _treinos;
@@ -35,7 +35,7 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
     super.initState();
     _treinos = widget.treinos;
     _tabController = TabController(length: 2, vsync: this);
-    print('Detalhes do aluno: ${widget.alunoNome}, ${_treinos.length} treinos'); // Debug
+    print('Detalhes do atleta: ${widget.atletaNome}, ${_treinos.length} treinos'); // Debug
   }
 
   @override
@@ -45,7 +45,7 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
   }
 
   Future<void> _recarregarTreinos() async {
-    List<SessaoTreino> novosTreinos = await _db.getTreinosDoAluno(widget.alunoCodigo);
+    List<SessaoTreino> novosTreinos = await _db.getTreinosDoAtleta(widget.atletaCodigo);
     setState(() {
       _treinos = novosTreinos;
     });
@@ -64,15 +64,15 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
       context,
       MaterialPageRoute(
         builder: (context) => AdicionarNotaPage(
-          alunoNome: widget.alunoNome,
-          alunoCodigo: widget.alunoCodigo,
+          atletaNome: widget.atletaNome,
+          atletaCodigo: widget.atletaCodigo,
           profissionalTipo: widget.profissionalTipo,
           profissionalId: profissional['id'],
           profissionalNome: profissional['nome'],
         ),
       ),
     );
-    
+
     if (result == true) {
       setState(() {});
     }
@@ -82,7 +82,7 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.alunoNome),
+        title: Text(widget.atletaNome),
         backgroundColor: widget.cor,
         actions: [
           IconButton(
@@ -114,7 +114,7 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
                         const SizedBox(height: 16),
                         const Text('Nenhum treino registrado', style: TextStyle(fontSize: 18, color: Colors.grey)),
                         const SizedBox(height: 8),
-                        Text('O atleta ${widget.alunoNome} ainda não finalizou nenhum treino',
+                        Text('O atleta ${widget.atletaNome} ainda não finalizou nenhum treino',
                             style: TextStyle(color: Colors.grey[400])),
                       ],
                     ),
@@ -133,8 +133,8 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
   }
 
   Widget _buildNotasTab() {
-    final notas = _db.getNotasDoAtleta(widget.alunoCodigo);
-    
+    final notas = _db.getNotasDoAtleta(widget.atletaCodigo);
+
     if (notas.isEmpty) {
       return Center(
         child: Column(
@@ -159,15 +159,15 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage>
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: nota.profissionalTipo == 'medico' 
-                  ? Colors.red[100] 
+              backgroundColor: nota.profissionalTipo == 'medico'
+                  ? Colors.red[100]
                   : Colors.green[100],
               child: Icon(
-                nota.profissionalTipo == 'medico' 
-                    ? Icons.medical_services 
+                nota.profissionalTipo == 'medico'
+                    ? Icons.medical_services
                     : Icons.restaurant,
-                color: nota.profissionalTipo == 'medico' 
-                    ? Colors.red 
+                color: nota.profissionalTipo == 'medico'
+                    ? Colors.red
                     : Colors.green,
               ),
             ),

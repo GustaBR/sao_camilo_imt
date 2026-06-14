@@ -1,49 +1,49 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 import '../models/sessao_treino.dart';
-import 'detalhes_aluno_page.dart';
+import 'detalhes_atleta_page.dart';
 
-class ListaAlunosPage extends StatefulWidget {
+class ListaAtletasPage extends StatefulWidget {
   final String profissionalNome;
   final String profissionalTipo;
   final String profissionalId;
-  final List<Map<String, dynamic>> alunos;
+  final List<Map<String, dynamic>> atletas;
 
-  const ListaAlunosPage({
+  const ListaAtletasPage({
     super.key,
     required this.profissionalNome,
     required this.profissionalTipo,
     required this.profissionalId,
-    required this.alunos,
+    required this.atletas,
   });
 
   @override
-  State<ListaAlunosPage> createState() => _ListaAlunosPageState();
+  State<ListaAtletasPage> createState() => _ListaAtletasPageState();
 }
 
-class _ListaAlunosPageState extends State<ListaAlunosPage> {
-  late List<Map<String, dynamic>> _alunos;
+class _ListaAtletasPageState extends State<ListaAtletasPage> {
+  late List<Map<String, dynamic>> _atletas;
   final DatabaseService _db = DatabaseService();
   final TextEditingController _codigoController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _alunos = List.from(widget.alunos);
-    print('Alunos carregados: ${_alunos.length}'); // Debug
+    _atletas = List.from(widget.atletas);
+    print('Atletas carregados: ${_atletas.length}'); // Debug
   }
 
-  void _adicionarAluno() {
+  void _adicionarAtleta() {
     _codigoController.clear();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Adicionar Aluno'),
+        title: const Text('Adicionar Atleta'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Digite o código do aluno:'),
+            const Text('Digite o código do atleta:'),
             const SizedBox(height: 16),
             TextField(
               controller: _codigoController,
@@ -65,33 +65,33 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
           ElevatedButton(
             onPressed: () {
               String codigo = _codigoController.text.trim().toUpperCase();
-              
+
               if (codigo.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Digite um código'), backgroundColor: Colors.red),
                 );
                 return;
               }
-              
-              if (!_db.validarCodigoAluno(codigo)) {
+
+              if (!_db.validarCodigoAtleta(codigo)) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Código inválido!'), backgroundColor: Colors.red),
                 );
                 return;
               }
-              
-              if (_db.adicionarAlunoAoProfissional(widget.profissionalId, codigo)) {
-                var aluno = _db.getAluno(codigo);
+
+              if (_db.adicionarAtletaAoProfissional(widget.profissionalId, codigo)) {
+                var atleta = _db.getAtleta(codigo);
                 setState(() {
-                  _alunos.add(aluno!);
+                  _atletas.add(atleta!);
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Aluno adicionado!'), backgroundColor: Colors.green),
+                  const SnackBar(content: Text('Atleta adicionado!'), backgroundColor: Colors.green),
                 );
                 Navigator.pop(context);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro ao adicionar aluno'), backgroundColor: Colors.red),
+                  const SnackBar(content: Text('Erro ao adicionar atleta'), backgroundColor: Colors.red),
                 );
               }
             },
@@ -102,16 +102,16 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
     );
   }
 
-  void _removerAluno(Map<String, dynamic> aluno, int index) {
+  void _removerAtleta(Map<String, dynamic> atleta, int index) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remover Aluno'),
+        title: const Text('Remover Atleta'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tem certeza que deseja remover este aluno?'),
+            const Text('Tem certeza que deseja remover este atleta?'),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -123,15 +123,15 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nome: ${aluno['nome']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Código: ${aluno['codigo']}'),
-                  Text('Email: ${aluno['email']}'),
+                  Text('Nome: ${atleta['nome']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Código: ${atleta['codigo']}'),
+                  Text('Email: ${atleta['email']}'),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             const Text(
-              '⚠️ Esta ação removerá o vínculo com este aluno.',
+              'Esta ação removerá o vínculo com este atleta.',
               style: TextStyle(fontSize: 12, color: Colors.orange),
             ),
           ],
@@ -143,22 +143,22 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              bool removido = _db.removerAlunoDoProfissional(widget.profissionalId, aluno['codigo']);
-              
+              bool removido = _db.removerAtletaDoProfissional(widget.profissionalId, atleta['codigo']);
+
               if (removido) {
                 setState(() {
-                  _alunos.removeAt(index);
+                  _atletas.removeAt(index);
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${aluno['nome']} foi removido'),
+                    content: Text('${atleta['nome']} foi removido'),
                     backgroundColor: Colors.green,
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Erro ao remover aluno'),
+                    content: Text('Erro ao remover atleta'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -173,19 +173,19 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
     );
   }
 
-  void _verDetalhes(Map<String, dynamic> aluno) async {
-    print('Abrindo detalhes do aluno: ${aluno['nome']}'); // Debug
-    
-    List<SessaoTreino> treinos = await _db.getTreinosDoAluno(aluno['codigo']);
-    
+  void _verDetalhes(Map<String, dynamic> atleta) async {
+    print('Abrindo detalhes do atleta: ${atleta['nome']}'); // Debug
+
+    List<SessaoTreino> treinos = await _db.getTreinosDoAtleta(atleta['codigo']);
+
     if (!mounted) return;
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DetalhesAlunoPage(
-          alunoNome: aluno['nome'],
-          alunoCodigo: aluno['codigo'],
+        builder: (context) => DetalhesAtletaPage(
+          atletaNome: atleta['nome'],
+          atletaCodigo: atleta['codigo'],
           profissionalTipo: widget.profissionalTipo,
           cor: widget.profissionalTipo == 'medico' ? const Color(0xFFB30000) : Colors.green,
           treinos: treinos,
@@ -205,7 +205,7 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.profissionalNome} - Alunos'),
+        title: Text('${widget.profissionalNome} - Atletas'),
         backgroundColor: cor,
         actions: [
           IconButton(
@@ -215,30 +215,30 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
           ),
         ],
       ),
-      body: _alunos.isEmpty
+      body: _atletas.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.people_outline, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  const Text('Nenhum aluno vinculado', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  const Text('Nenhum atleta vinculado', style: TextStyle(fontSize: 18, color: Colors.grey)),
                   const SizedBox(height: 8),
-                  Text('Toque no + para adicionar um aluno', style: TextStyle(color: Colors.grey[400])),
+                  Text('Toque no + para adicionar um atleta', style: TextStyle(color: Colors.grey[400])),
                 ],
               ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _alunos.length,
+              itemCount: _atletas.length,
               itemBuilder: (context, index) {
-                final aluno = _alunos[index];
+                final atleta = _atletas[index];
                 return Card(
                   elevation: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: InkWell(
-                    onTap: () => _verDetalhes(aluno),
+                    onTap: () => _verDetalhes(atleta),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -258,16 +258,16 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(aluno['nome'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                Text('Código: ${aluno['codigo']}', style: TextStyle(fontSize: 12, color: cor)),
-                                Text(aluno['email'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                                Text(atleta['nome'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                Text('Código: ${atleta['codigo']}', style: TextStyle(fontSize: 12, color: cor)),
+                                Text(atleta['email'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.black54)),
                               ],
                             ),
                           ),
                           IconButton(
                             icon: Icon(Icons.delete_outline, color: Colors.red[400]),
-                            onPressed: () => _removerAluno(aluno, index),
-                            tooltip: 'Remover aluno',
+                            onPressed: () => _removerAtleta(atleta, index),
+                            tooltip: 'Remover atleta',
                           ),
                           Icon(Icons.chevron_right, size: 32, color: cor),
                         ],
@@ -278,7 +278,7 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _adicionarAluno,
+        onPressed: _adicionarAtleta,
         backgroundColor: cor,
         child: const Icon(Icons.add),
       ),

@@ -149,9 +149,18 @@ class DatabaseService {
     return {'id': _ativoLogadoId, 'nome': _ativoLogadoNome};
   }
 
+  Map<String, dynamic>? getProfissionalLogado() {
+    if (_ativoLogadoId == null) return null;
+    return getProfissional(_ativoLogadoId!);
+  }
+
   void logout() {
     _ativoLogadoId = null;
     _ativoLogadoNome = null;
+  }
+
+  void logoutProfissional() {
+    logout();
   }
 
   List<Map<String, dynamic>> getAtletasDoProfissional(String profissionalId) {

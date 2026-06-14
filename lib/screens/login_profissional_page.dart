@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import 'lista_alunos_page.dart';
+import 'lista_atletas_page.dart';
 
 class LoginProfissionalPage extends StatefulWidget {
   final String tipo;
@@ -41,17 +41,17 @@ class _LoginProfissionalPageState extends State<LoginProfissionalPage> {
       return;
     }
     
-    List<Map<String, dynamic>> alunos = _db.getAlunosDoProfissional(profissionalId);
+    List<Map<String, dynamic>> atletas = _db.getAtletasDoProfissional(profissionalId);
     
     if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => ListaAlunosPage(
+          builder: (context) => ListaAtletasPage(
             profissionalNome: profissional['nome'],
             profissionalTipo: widget.tipo,
             profissionalId: profissionalId,
-            alunos: alunos,
+            atletas: atletas,
           ),
         ),
       );
