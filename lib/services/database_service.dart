@@ -89,6 +89,14 @@ class DatabaseService {
     return true;
   }
 
+  // REMOVER VÍNCULO do profissional com o atleta
+  bool removerAlunoDoProfissional(String profissionalId, String alunoCodigo) {
+    if (_profissionaisAlunos.containsKey(profissionalId)) {
+      return _profissionaisAlunos[profissionalId]!.remove(alunoCodigo);
+    }
+    return false;
+  }
+
   void carregarDadosExemplo() {
     String aluno1 = cadastrarAluno("João Silva", "joao@email.com");
     _treinosPorAluno[aluno1] = [

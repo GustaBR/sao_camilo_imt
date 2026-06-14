@@ -12,28 +12,44 @@ class _AlunoCodigoPageState extends State<AlunoCodigoPage> {
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final DatabaseService _db = DatabaseService();
+  
   String? _codigoGerado;
   bool _isLoading = false;
 
-  void _gerarCodigo() {
-    if (_nomeController.text.trim().isEmpty) {
+  Future<void> _gerarCodigo() async {
+    final nome = _nomeController.text.trim();
+    final email = _emailController.text.trim();
+
+    if (nome.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Digite seu nome'), backgroundColor: Colors.red),
       );
       return;
     }
+    
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Digite seu e-mail'), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 500), () {
-      String codigo = _db.cadastrarAluno(
-        _nomeController.text.trim(),
-        _emailController.text.trim(),
+
+    String? resultado = await _db.cadastrarAluno(nome, email);
+
+    setState(() => _isLoading = false);
+
+    if (resultado != null) {
+      setState(() => _codigoGerado = resultado);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cadastro realizado! Guarde seu código.'), backgroundColor: Colors.green),
       );
-      setState(() {
-        _codigoGerado = codigo;
-        _isLoading = false;
-      });
-    });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao gerar código. Tente novamente.'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -82,7 +98,7 @@ class _AlunoCodigoPageState extends State<AlunoCodigoPage> {
             ] else ...[
               const Icon(Icons.check_circle, size: 80, color: Colors.green),
               const SizedBox(height: 24),
-              const Text('Seu código exclusivo:', style: TextStyle(fontSize: 16)),
+              const Text('Seu código exclusivo (único e permanente):', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(20),

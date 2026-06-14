@@ -7,6 +7,7 @@ class DetalhesAlunoPage extends StatefulWidget {
   final String alunoCodigo;
   final String profissionalTipo;
   final Color cor;
+  final List<SessaoTreino> treinos; // NOVO: receber treinos diretamente
 
   const DetalhesAlunoPage({
     super.key,
@@ -14,6 +15,7 @@ class DetalhesAlunoPage extends StatefulWidget {
     required this.alunoCodigo,
     required this.profissionalTipo,
     required this.cor,
+    required this.treinos,
   });
 
   @override
@@ -21,18 +23,19 @@ class DetalhesAlunoPage extends StatefulWidget {
 }
 
 class _DetalhesAlunoPageState extends State<DetalhesAlunoPage> {
-  late Future<List<SessaoTreino>> _treinosFuture;
+  late List<SessaoTreino> _treinos;
   final DatabaseService _db = DatabaseService();
 
   @override
   void initState() {
     super.initState();
-    _carregarTreinos();
+    _treinos = widget.treinos;
   }
 
-  void _carregarTreinos() {
+  Future<void> _recarregarTreinos() async {
+    List<SessaoTreino> novosTreinos = await _db.getTreinosDoAluno(widget.alunoCodigo);
     setState(() {
-      _treinosFuture = Future.value(_db.getTreinosDoAluno(widget.alunoCodigo));
+      _treinos = novosTreinos;
     });
   }
 
@@ -44,19 +47,9 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage> {
         backgroundColor: widget.cor,
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          _carregarTreinos();
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: FutureBuilder<List<SessaoTreino>>(
-          future: _treinosFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final treinos = snapshot.data ?? [];
-            if (treinos.isEmpty) {
-              return Center(
+        onRefresh: _recarregarTreinos,
+        child: _treinos.isEmpty
+            ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -64,19 +57,16 @@ class _DetalhesAlunoPageState extends State<DetalhesAlunoPage> {
                     const SizedBox(height: 16),
                     const Text('Nenhum treino registrado', style: TextStyle(fontSize: 18, color: Colors.grey)),
                     const SizedBox(height: 8),
-                    Text('O aluno ${widget.alunoNome} ainda não finalizou nenhum treino',
+                    Text('O atleta ${widget.alunoNome} ainda não finalizou nenhum treino',
                         style: TextStyle(color: Colors.grey[400])),
                   ],
                 ),
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: treinos.length,
-              itemBuilder: (context, index) => _buildTreinoCard(treinos[index]),
-            );
-          },
-        ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _treinos.length,
+                itemBuilder: (context, index) => _buildTreinoCard(_treinos[index]),
+              ),
       ),
     );
   }

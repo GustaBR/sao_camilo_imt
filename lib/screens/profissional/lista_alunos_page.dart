@@ -81,6 +81,80 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
     );
   }
 
+  // NOVO: Método para remover aluno com confirmação
+  void _removerAluno(Map<String, dynamic> aluno, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover Aluno'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tem certeza que deseja remover este aluno?'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nome: ${aluno['nome']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Código: ${aluno['codigo']}'),
+                  Text('Email: ${aluno['email']}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '⚠️ Esta ação removerá o vínculo com este aluno. O aluno continuará existindo no sistema, mas não será mais acessível por você.',
+              style: TextStyle(fontSize: 12, color: Colors.orange),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Remover o vínculo do profissional com o aluno
+              bool removido = _db.removerAlunoDoProfissional(widget.profissionalId, aluno['codigo']);
+              
+              if (removido) {
+                setState(() {
+                  _alunos.removeAt(index);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${aluno['nome']} foi removido da sua lista'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erro ao remover aluno'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('REMOVER', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Color cor = widget.profissionalTipo == 'medico' ? const Color(0xFFB30000) : Colors.green;
@@ -156,6 +230,12 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                                 Text(aluno['email'], style: const TextStyle(fontSize: 12, color: Colors.black54)),
                               ],
                             ),
+                          ),
+                          // NOVO: Botão de remover
+                          IconButton(
+                            icon: Icon(Icons.delete_outline, color: Colors.red[400]),
+                            onPressed: () => _removerAluno(aluno, index),
+                            tooltip: 'Remover aluno',
                           ),
                           Icon(Icons.chevron_right, size: 32, color: cor),
                         ],
