@@ -25,9 +25,7 @@ String get _apiBaseUrl {
 
 class WeatherException implements Exception {
   const WeatherException(this.message);
-
   final String message;
-
   @override
   String toString() => message;
 }
@@ -57,11 +55,9 @@ class WeatherData {
 
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     final temperatura = _asDouble(json['temperatura']);
-
     if (temperatura == null) {
       throw const WeatherException('A API de clima nao retornou temperatura.');
     }
-
     return WeatherData(
       temperatura: temperatura,
       umidade: _asDouble(json['umidade']),
@@ -90,18 +86,13 @@ class WeatherService {
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 12));
-
       if (response.statusCode != 200) {
-        throw WeatherException(
-          'Nao foi possivel buscar o clima. Codigo ${response.statusCode}.',
-        );
+        throw WeatherException('Nao foi possivel buscar o clima. Codigo ${response.statusCode}.');
       }
-
       final data = jsonDecode(response.body);
       if (data is! Map<String, dynamic>) {
         throw const WeatherException('Resposta de clima em formato invalido.');
       }
-
       return WeatherData.fromJson(data);
     } on http.ClientException {
       throw WeatherException(
@@ -120,9 +111,7 @@ class WeatherService {
   Future<Position> _buscarLocalizacaoAtual() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw const WeatherException(
-        'Ative a localizacao do dispositivo para preencher o clima.',
-      );
+      throw const WeatherException('Ative a localizacao do dispositivo para preencher o clima.');
     }
 
     var permission = await Geolocator.checkPermission();
@@ -131,15 +120,11 @@ class WeatherService {
     }
 
     if (permission == LocationPermission.denied) {
-      throw const WeatherException(
-        'Permita o acesso a localizacao para preencher o clima.',
-      );
+      throw const WeatherException('Permita o acesso a localizacao para preencher o clima.');
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw const WeatherException(
-        'A permissao de localizacao foi bloqueada nas configuracoes.',
-      );
+      throw const WeatherException('A permissao de localizacao foi bloqueada nas configuracoes.');
     }
 
     return Geolocator.getCurrentPosition(
@@ -152,13 +137,7 @@ class WeatherService {
 }
 
 double? _asDouble(Object? value) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is num) {
-    return value.toDouble();
-  }
-
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
   return double.tryParse(value.toString());
 }

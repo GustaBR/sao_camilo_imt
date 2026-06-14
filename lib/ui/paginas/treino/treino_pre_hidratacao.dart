@@ -1,8 +1,36 @@
 import 'package:flutter/material.dart';
 import 'treino_intra_sessao.dart';
+import '../../../services/radio_group.dart';
+import '../../../services/database_service.dart';
+import '../../../models/sessao_treino.dart';
 
 class TreinoPreHidratacao extends StatefulWidget {
-  const TreinoPreHidratacao({super.key});
+  final double massaCorporalPre;
+  final String modalidade;
+  final int duracaoPrevista;
+  final int temperatura;
+  final int umidade;
+  final double sensacaoTermica;
+  final String vento;
+  final String exposicaoSolar;
+  final String corUrina;
+  final String vestimenta;
+  final String equipamento;
+
+  const TreinoPreHidratacao({
+    super.key,
+    required this.massaCorporalPre,
+    required this.modalidade,
+    required this.duracaoPrevista,
+    required this.temperatura,
+    required this.umidade,
+    required this.sensacaoTermica,
+    required this.vento,
+    required this.exposicaoSolar,
+    required this.corUrina,
+    required this.vestimenta,
+    required this.equipamento,
+  });
 
   @override
   State<TreinoPreHidratacao> createState() => _TreinoPreHidratacaoState();
@@ -15,13 +43,6 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
   bool? _estaComSede;
   bool? _temSintomas;
 
-  @override
-  void dispose() {
-    _sintomasController.dispose();
-    _historicoHidratacaoController.dispose();
-    super.dispose();
-  }
-
   void _finalizarPreSessao() {
     if (_estaComSede == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -29,105 +50,75 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
       );
       return;
     }
-
     if (_temSintomas == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Informe se sente algum sintoma antes do treino.')),
       );
       return;
     }
-
     if (_formKey.currentState!.validate()) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const TreinoIntraSessao()),
+        MaterialPageRoute(
+          builder: (context) => TreinoIntraSessao(
+            massaCorporalPre: widget.massaCorporalPre,
+            modalidade: widget.modalidade,
+            duracaoPrevista: widget.duracaoPrevista,
+            temperatura: widget.temperatura,
+            umidade: widget.umidade,
+            sensacaoTermica: widget.sensacaoTermica,
+            vento: widget.vento,
+            exposicaoSolar: widget.exposicaoSolar,
+            corUrina: widget.corUrina,
+            vestimenta: widget.vestimenta,
+            equipamento: widget.equipamento,
+            estaComSede: _estaComSede!,
+            sintomasDescricao: _temSintomas == true ? _sintomasController.text : '',
+            historicoHidratacao: _historicoHidratacaoController.text,
+          ),
+        ),
       );
     }
-  }
-
-  Widget _buildOpcaoSimNao({
-    required String titulo,
-    required bool? valorAtual,
-    required ValueChanged<bool?> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          titulo,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        RadioGroup<bool>(
-          groupValue: valorAtual,
-          onChanged: onChanged,
-          child: const Column(
-            children: [
-              RadioListTile<bool>(
-                title: Text('Sim'),
-                value: true,
-                activeColor: Color(0xFFB30000),
-              ),
-              RadioListTile<bool>(
-                title: Text('Não'),
-                value: false,
-                activeColor: Color(0xFFB30000),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pré-sessão'),
+        title: const Text('Pré-sessão - Hidratação'),
         centerTitle: true,
+        backgroundColor: const Color(0xFFB30000),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Hidratação e sintomas',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Está com sede antes do treino?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              CustomRadioGroup(
+                value: _estaComSede,
+                onChanged: (v) => setState(() => _estaComSede = v),
               ),
               const SizedBox(height: 24),
-              _buildOpcaoSimNao(
-                titulo: 'Está com sede antes do treino?',
-                valorAtual: _estaComSede,
-                onChanged: (value) {
-                  setState(() {
-                    _estaComSede = value;
-                  });
-                },
+              const Text(
+                'Sente algum sintoma antes do treino?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 16),
-              _buildOpcaoSimNao(
-                titulo: 'Sente algum sintoma antes do treino?',
-                valorAtual: _temSintomas,
-                onChanged: (value) {
-                  setState(() {
-                    _temSintomas = value;
-                    if (value == false) {
-                      _sintomasController.clear();
-                    }
-                  });
-                },
+              CustomRadioGroup(
+                value: _temSintomas,
+                onChanged: (v) => setState(() => _temSintomas = v),
               ),
               if (_temSintomas == true) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _sintomasController,
                   decoration: const InputDecoration(
@@ -135,12 +126,7 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
-                  validator: (value) {
-                    if (_temSintomas == true && (value == null || value.isEmpty)) {
-                      return 'Descreva os sintomas';
-                    }
-                    return null;
-                  },
+                  validator: (v) => v!.isEmpty ? 'Descreva os sintomas' : null,
                 ),
               ],
               const SizedBox(height: 24),
@@ -151,17 +137,17 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a hidratação recente';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe a hidratação recente' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _finalizarPreSessao,
-                child: const Text('FINALIZAR PRÉ-SESSÃO'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('FINALIZAR PRÉ-SESSÃO', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

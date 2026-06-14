@@ -1,6 +1,6 @@
 // lib/screens/pages/selecao_profissional_page.dart
 import 'package:flutter/material.dart';
-import 'login_profissional_page.dart';
+import 'pages/login_profissional_page.dart';
 
 class SelecaoProfissionalPage extends StatelessWidget {
   const SelecaoProfissionalPage({super.key});

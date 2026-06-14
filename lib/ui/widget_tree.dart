@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sao_camilo_imt/data/notifiers.dart';
-import 'package:sao_camilo_imt/ui/paginas/tela_inicial.dart';
-import 'package:sao_camilo_imt/ui/paginas/tela_perfil.dart';
-import 'package:sao_camilo_imt/ui/widgets/navbar_widget.dart';
+import '../notifiers.dart';
+import '../screens/tela_inicial.dart';
+import 'paginas/tela_perfil.dart';
+import 'widgets/navbar_widget.dart';
 
 List<Widget> paginas = [TelaInicial(), TelaPerfil()];
 

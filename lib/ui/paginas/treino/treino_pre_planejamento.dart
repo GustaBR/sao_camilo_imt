@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
 import 'treino_pre_hidratacao.dart';
+import '../../../services/database_service.dart';
+import '../../../models/sessao_treino.dart';
 
 class TreinoPrePlanejamento extends StatefulWidget {
-  const TreinoPrePlanejamento({super.key});
+  final double massaCorporalPre;
+  final String modalidade;
+  final int duracaoPrevista;
+  final int temperatura;
+  final int umidade;
+  final double sensacaoTermica;
+  final String vento;
+  final String exposicaoSolar;
+
+  const TreinoPrePlanejamento({
+    super.key,
+    required this.massaCorporalPre,
+    required this.modalidade,
+    required this.duracaoPrevista,
+    required this.temperatura,
+    required this.umidade,
+    required this.sensacaoTermica,
+    required this.vento,
+    required this.exposicaoSolar,
+  });
 
   @override
   State<TreinoPrePlanejamento> createState() => _TreinoPrePlanejamentoState();
@@ -15,38 +36,13 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
   String? _corUrinaSelecionada;
 
   final List<Map<String, dynamic>> _coresUrina = [
-    {
-      'nome': 'Transparente',
-      'cor': Color(0xFFE9F7FF),
-    },
-    {
-      'nome': 'Amarelo claro',
-      'cor': Color(0xFFFFF6A3),
-    },
-    {
-      'nome': 'Amarelo',
-      'cor': Color(0xFFFFE066),
-    },
-    {
-      'nome': 'Amarelo escuro',
-      'cor': Color(0xFFF4B942),
-    },
-    {
-      'nome': 'Âmbar',
-      'cor': Color(0xFFD88A24),
-    },
-    {
-      'nome': 'Marrom escuro',
-      'cor': Color(0xFF8A4B20),
-    },
+    {'nome': 'Transparente', 'cor': Color(0xFFE9F7FF)},
+    {'nome': 'Amarelo claro', 'cor': Color(0xFFFFF6A3)},
+    {'nome': 'Amarelo', 'cor': Color(0xFFFFE066)},
+    {'nome': 'Amarelo escuro', 'cor': Color(0xFFF4B942)},
+    {'nome': 'Âmbar', 'cor': Color(0xFFD88A24)},
+    {'nome': 'Marrom escuro', 'cor': Color(0xFF8A4B20)},
   ];
-
-  @override
-  void dispose() {
-    _vestimentaController.dispose();
-    _equipamentoController.dispose();
-    super.dispose();
-  }
 
   void _avancar() {
     if (_corUrinaSelecionada == null) {
@@ -55,11 +51,24 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
       );
       return;
     }
-
     if (_formKey.currentState!.validate()) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const TreinoPreHidratacao()),
+        MaterialPageRoute(
+          builder: (context) => TreinoPreHidratacao(
+            massaCorporalPre: widget.massaCorporalPre,
+            modalidade: widget.modalidade,
+            duracaoPrevista: widget.duracaoPrevista,
+            temperatura: widget.temperatura,
+            umidade: widget.umidade,
+            sensacaoTermica: widget.sensacaoTermica,
+            vento: widget.vento,
+            exposicaoSolar: widget.exposicaoSolar,
+            corUrina: _corUrinaSelecionada!,
+            vestimenta: _vestimentaController.text,
+            equipamento: _equipamentoController.text,
+          ),
+        ),
       );
     }
   }
@@ -68,52 +77,41 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pré-sessão'),
+        title: const Text('Pré-sessão - Planejamento'),
         centerTitle: true,
+        backgroundColor: const Color(0xFFB30000),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Planejamento do treino',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Registre a cor da urina, vestimenta e equipamentos.',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: Colors.black54),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               const Text(
                 'Cor da urina',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: _coresUrina.map((opcao) {
-                  final String nome = opcao['nome'];
-                  final Color cor = opcao['cor'];
-                  final bool selecionada = _corUrinaSelecionada == nome;
-
+                  final nome = opcao['nome'];
+                  final cor = opcao['cor'];
+                  final selecionada = _corUrinaSelecionada == nome;
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      setState(() {
-                        _corUrinaSelecionada = nome;
-                      });
-                    },
+                    onTap: () => setState(() => _corUrinaSelecionada = nome),
                     child: Container(
                       width: 140,
                       padding: const EdgeInsets.all(12),
@@ -157,12 +155,7 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.checkroom),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o tipo de vestimenta';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe o tipo de vestimenta' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -172,17 +165,17 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.fitness_center),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o equipamento utilizado';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe o equipamento utilizado' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _avancar,
-                child: const Text('PRÓXIMO'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('PRÓXIMO', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

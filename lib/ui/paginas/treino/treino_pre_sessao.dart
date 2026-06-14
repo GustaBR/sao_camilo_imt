@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'treino_pre_ambiente.dart';
+import '../../../services/database_service.dart';
 
 class TreinoPreSessao extends StatefulWidget {
   const TreinoPreSessao({super.key});
@@ -14,19 +15,17 @@ class _TreinoPreSessaoState extends State<TreinoPreSessao> {
   final TextEditingController _modalidadeController = TextEditingController();
   final TextEditingController _duracaoPrevistaController = TextEditingController();
 
-  @override
-  void dispose() {
-    _massaCorporalController.dispose();
-    _modalidadeController.dispose();
-    _duracaoPrevistaController.dispose();
-    super.dispose();
-  }
-
   void _avancar() {
     if (_formKey.currentState!.validate()) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const TreinoPreAmbiente()),
+        MaterialPageRoute(
+          builder: (context) => TreinoPreAmbiente(
+            massaCorporalPre: double.parse(_massaCorporalController.text),
+            modalidade: _modalidadeController.text,
+            duracaoPrevista: int.parse(_duracaoPrevistaController.text),
+          ),
+        ),
       );
     }
   }
@@ -35,79 +34,44 @@ class _TreinoPreSessaoState extends State<TreinoPreSessao> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pré-sessão'),
+        title: const Text('Pré-sessão - Dados Iniciais'),
         centerTitle: true,
+        backgroundColor: const Color(0xFFB30000),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Dados iniciais do treino',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('Dados iniciais do treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              const Text(
-                'Informe os dados antes do inicio da sessão.',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 24),
+              const Text('Informe os dados antes do início da sessão.', style: TextStyle(fontSize: 16, color: Colors.black54)),
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _massaCorporalController,
-                decoration: const InputDecoration(
-                  labelText: 'Massa corporal pré-exercício (kg)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.monitor_weight),
-                ),
+                decoration: const InputDecoration(labelText: 'Massa corporal pré-exercício (kg)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.monitor_weight)),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a massa corporal';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe a massa corporal' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _modalidadeController,
-                decoration: const InputDecoration(
-                  labelText: 'Modalidade',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.sports),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a modalidade';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'Modalidade', border: OutlineInputBorder(), prefixIcon: Icon(Icons.sports)),
+                validator: (v) => v!.isEmpty ? 'Informe a modalidade' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _duracaoPrevistaController,
-                decoration: const InputDecoration(
-                  labelText: 'Duração prevista (min)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.timer),
-                ),
+                decoration: const InputDecoration(labelText: 'Duração prevista (min)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.timer)),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a duração prevista';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe a duração prevista' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _avancar,
-                child: const Text('PRÓXIMO'),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                child: const Text('PRÓXIMO', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

@@ -1,9 +1,43 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'treino_pos_sessao.dart';
+import '../../../services/database_service.dart';
+import '../../../models/sessao_treino.dart';
+
 
 class TreinoIntraSessao extends StatefulWidget {
-  const TreinoIntraSessao({super.key});
+  final double massaCorporalPre;
+  final String modalidade;
+  final int duracaoPrevista;
+  final int temperatura;
+  final int umidade;
+  final double sensacaoTermica;
+  final String vento;
+  final String exposicaoSolar;
+  final String corUrina;
+  final String vestimenta;
+  final String equipamento;
+  final bool estaComSede;
+  final String sintomasDescricao;
+  final String historicoHidratacao;
+
+  const TreinoIntraSessao({
+    super.key,
+    required this.massaCorporalPre,
+    required this.modalidade,
+    required this.duracaoPrevista,
+    required this.temperatura,
+    required this.umidade,
+    required this.sensacaoTermica,
+    required this.vento,
+    required this.exposicaoSolar,
+    required this.corUrina,
+    required this.vestimenta,
+    required this.equipamento,
+    required this.estaComSede,
+    required this.sintomasDescricao,
+    required this.historicoHidratacao,
+  });
 
   @override
   State<TreinoIntraSessao> createState() => _TreinoIntraSessaoState();
@@ -19,83 +53,28 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
   Timer? _timerTreino;
   bool _timerRodando = false;
 
-  @override
-  void dispose() {
-    _timerTreino?.cancel();
-    _volumePersonalizadoController.dispose();
-    _alimentosController.dispose();
-    _volumeUrinarioController.dispose();
-    super.dispose();
-  }
-
   String get _tempoFormatado {
-    final int horas = _segundosTreino ~/ 3600;
-    final int minutos = (_segundosTreino % 3600) ~/ 60;
-    final int segundos = _segundosTreino % 60;
-
-    String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
-
-    return '${doisDigitos(horas)}:${doisDigitos(minutos)}:${doisDigitos(segundos)}';
+    final horas = _segundosTreino ~/ 3600;
+    final minutos = (_segundosTreino % 3600) ~/ 60;
+    final segundos = _segundosTreino % 60;
+    return '${horas.toString().padLeft(2, '0')}:${minutos.toString().padLeft(2, '0')}:${segundos.toString().padLeft(2, '0')}';
   }
 
-  void _iniciarOuContinuarTimer() {
-    if (_timerRodando) {
-      return;
-    }
-
-    setState(() {
-      _timerRodando = true;
-    });
-
+  void _iniciarTimer() {
+    if (_timerRodando) return;
+    setState(() => _timerRodando = true);
     _timerTreino = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _segundosTreino++;
-      });
+      setState(() => _segundosTreino++);
     });
   }
 
   void _pausarTimer() {
     _timerTreino?.cancel();
-    setState(() {
-      _timerRodando = false;
-    });
+    setState(() => _timerRodando = false);
   }
 
-  void _zerarTimer() {
-    _timerTreino?.cancel();
-    setState(() {
-      _segundosTreino = 0;
-      _timerRodando = false;
-    });
-  }
-
-  void _adicionarFluido(int volumeMl) {
-    setState(() {
-      _totalFluidosMl += volumeMl;
-    });
-  }
-
-  void _adicionarVolumePersonalizado() {
-    final int? volume = int.tryParse(_volumePersonalizadoController.text);
-
-    if (volume == null || volume <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe um volume válido em mL.')),
-      );
-      return;
-    }
-
-    _adicionarFluido(volume);
-    _volumePersonalizadoController.clear();
-  }
-
-  void _removerUltimoAtalho(int volumeMl) {
-    setState(() {
-      _totalFluidosMl -= volumeMl;
-      if (_totalFluidosMl < 0) {
-        _totalFluidosMl = 0;
-      }
-    });
+  void _adicionarFluido(int volume) {
+    setState(() => _totalFluidosMl += volume);
   }
 
   void _finalizarIntraSessao() {
@@ -105,85 +84,33 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
       );
       return;
     }
-
     if (_formKey.currentState!.validate()) {
       _pausarTimer();
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const TreinoPosSessao()),
+        MaterialPageRoute(
+          builder: (context) => TreinoPosSessao(
+            massaCorporalPre: widget.massaCorporalPre,
+            modalidade: widget.modalidade,
+            duracaoRealSegundos: _segundosTreino,
+            fluidosIngeridosMl: _totalFluidosMl,
+            alimentosAgua: _alimentosController.text,
+            volumeUrinarioMl: int.parse(_volumeUrinarioController.text),
+            temperatura: widget.temperatura,
+            umidade: widget.umidade,
+            sensacaoTermica: widget.sensacaoTermica,
+            vento: widget.vento,
+            exposicaoSolar: widget.exposicaoSolar,
+            corUrina: widget.corUrina,
+            vestimenta: widget.vestimenta,
+            equipamento: widget.equipamento,
+            estaComSede: widget.estaComSede,
+            sintomasDescricao: widget.sintomasDescricao,
+            historicoHidratacao: widget.historicoHidratacao,
+          ),
+        ),
       );
     }
-  }
-
-  Widget _buildAtalhoFluido({
-    required String titulo,
-    required int volumeMl,
-  }) {
-    return Expanded(
-      child: ElevatedButton(
-        onPressed: () {
-          _adicionarFluido(volumeMl);
-        },
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: Text('$titulo\n+$volumeMl mL', textAlign: TextAlign.center),
-      ),
-    );
-  }
-
-  Widget _buildTimerTreino() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            'Tempo de treino',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _tempoFormatado,
-            style: const TextStyle(
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFB30000),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _iniciarOuContinuarTimer,
-                  child: Text(_segundosTreino == 0 ? 'INICIAR' : 'CONTINUAR'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _timerRodando ? _pausarTimer : null,
-                  child: const Text('PAUSAR'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: _segundosTreino > 0 ? _zerarTimer : null,
-            child: const Text('ZERAR TIMER'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -192,41 +119,73 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
       appBar: AppBar(
         title: const Text('Intra-sessão'),
         centerTitle: true,
+        backgroundColor: const Color(0xFFB30000),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Durante o treino',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
-              _buildTimerTreino(),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Tempo de treino',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      _tempoFormatado,
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFB30000),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _iniciarTimer,
+                            child: Text(_segundosTreino == 0 ? 'INICIAR' : 'CONTINUAR'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _timerRodando ? _pausarTimer : null,
+                            child: const Text('PAUSAR'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.black12),
                 ),
                 child: Column(
                   children: [
                     const Text(
                       'Total de fluidos ingeridos',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 8),
                     Text(
                       '$_totalFluidosMl mL',
                       style: const TextStyle(
@@ -241,27 +200,32 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
               const SizedBox(height: 24),
               const Text(
                 'Registre sua ingestão de fluidos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildAtalhoFluido(titulo: 'Copo', volumeMl: 200),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _adicionarFluido(200),
+                      child: const Text('Copo\n+200 mL', textAlign: TextAlign.center),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  _buildAtalhoFluido(titulo: 'Squeeze', volumeMl: 500),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _adicionarFluido(500),
+                      child: const Text('Squeeze\n+500 mL', textAlign: TextAlign.center),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  _buildAtalhoFluido(titulo: 'Garrafa', volumeMl: 750),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _adicionarFluido(750),
+                      child: const Text('Garrafa\n+750 mL', textAlign: TextAlign.center),
+                    ),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () {
-                  _removerUltimoAtalho(200);
-                },
-                child: const Text('REMOVER 200 mL'),
               ),
               const SizedBox(height: 16),
               Row(
@@ -278,7 +242,7 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
-                    onPressed: _adicionarVolumePersonalizado,
+                    onPressed: () => _adicionarFluido(int.tryParse(_volumePersonalizadoController.text) ?? 0),
                     child: const Text('ADICIONAR'),
                   ),
                 ],
@@ -291,12 +255,7 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe os alimentos consumidos ou escreva "nenhum"';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe os alimentos' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -306,17 +265,17 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o volume urinário estimado ou 0';
-                  }
-                  return null;
-                },
+                validator: (v) => v!.isEmpty ? 'Informe o volume urinário' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _finalizarIntraSessao,
-                child: const Text('FINALIZAR INTRA-SESSÃO'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('FINALIZAR INTRA-SESSÃO', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/database_service.dart';
+import '../services/database_service.dart';
+import '../models/sessao_treino.dart';
 import 'detalhes_aluno_page.dart';
 
 class ListaAlunosPage extends StatefulWidget {
@@ -29,9 +30,12 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
   void initState() {
     super.initState();
     _alunos = List.from(widget.alunos);
+    print('Alunos carregados: ${_alunos.length}'); // Debug
   }
 
   void _adicionarAluno() {
+    _codigoController.clear();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -54,23 +58,40 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () {
               String codigo = _codigoController.text.trim().toUpperCase();
-              if (_db.validarCodigoAluno(codigo)) {
-                if (_db.adicionarAlunoAoProfissional(widget.profissionalId, codigo)) {
-                  var aluno = _db.getAluno(codigo);
-                  setState(() => _alunos.add(aluno!));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Aluno adicionado!')),
-                  );
-                  Navigator.pop(context);
-                  _codigoController.clear();
-                }
-              } else {
+              
+              if (codigo.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Digite um código'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              
+              if (!_db.validarCodigoAluno(codigo)) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Código inválido!'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              
+              if (_db.adicionarAlunoAoProfissional(widget.profissionalId, codigo)) {
+                var aluno = _db.getAluno(codigo);
+                setState(() {
+                  _alunos.add(aluno!);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Aluno adicionado!'), backgroundColor: Colors.green),
+                );
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Erro ao adicionar aluno'), backgroundColor: Colors.red),
                 );
               }
             },
@@ -81,7 +102,6 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
     );
   }
 
-  // NOVO: Método para remover aluno com confirmação
   void _removerAluno(Map<String, dynamic> aluno, int index) {
     showDialog(
       context: context,
@@ -111,7 +131,7 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              '⚠️ Esta ação removerá o vínculo com este aluno. O aluno continuará existindo no sistema, mas não será mais acessível por você.',
+              '⚠️ Esta ação removerá o vínculo com este aluno.',
               style: TextStyle(fontSize: 12, color: Colors.orange),
             ),
           ],
@@ -123,7 +143,6 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Remover o vínculo do profissional com o aluno
               bool removido = _db.removerAlunoDoProfissional(widget.profissionalId, aluno['codigo']);
               
               if (removido) {
@@ -132,7 +151,7 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${aluno['nome']} foi removido da sua lista'),
+                    content: Text('${aluno['nome']} foi removido'),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -144,7 +163,6 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                   ),
                 );
               }
-              
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -153,6 +171,32 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
         ],
       ),
     );
+  }
+
+  void _verDetalhes(Map<String, dynamic> aluno) async {
+    print('Abrindo detalhes do aluno: ${aluno['nome']}'); // Debug
+    
+    List<SessaoTreino> treinos = await _db.getTreinosDoAluno(aluno['codigo']);
+    
+    if (!mounted) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetalhesAlunoPage(
+          alunoNome: aluno['nome'],
+          alunoCodigo: aluno['codigo'],
+          profissionalTipo: widget.profissionalTipo,
+          cor: widget.profissionalTipo == 'medico' ? const Color(0xFFB30000) : Colors.green,
+          treinos: treinos,
+        ),
+      ),
+    );
+  }
+
+  void _sair() {
+    _db.logoutProfissional();
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -166,7 +210,8 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+            onPressed: _sair,
+            tooltip: 'Sair',
           ),
         ],
       ),
@@ -193,19 +238,7 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DetalhesAlunoPage(
-                            alunoNome: aluno['nome'],
-                            alunoCodigo: aluno['codigo'],
-                            profissionalTipo: widget.profissionalTipo,
-                            cor: cor,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () => _verDetalhes(aluno),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -227,11 +260,10 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                               children: [
                                 Text(aluno['nome'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 Text('Código: ${aluno['codigo']}', style: TextStyle(fontSize: 12, color: cor)),
-                                Text(aluno['email'], style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                                Text(aluno['email'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.black54)),
                               ],
                             ),
                           ),
-                          // NOVO: Botão de remover
                           IconButton(
                             icon: Icon(Icons.delete_outline, color: Colors.red[400]),
                             onPressed: () => _removerAluno(aluno, index),
@@ -245,11 +277,10 @@ class _ListaAlunosPageState extends State<ListaAlunosPage> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _adicionarAluno,
         backgroundColor: cor,
-        icon: const Icon(Icons.add),
-        label: const Text('Adicionar Aluno'),
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -1,33 +1,52 @@
 import 'dart:math';
 import '../models/sessao_treino.dart';
+import '../models/nota.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
-  final Map<String, Map<String, dynamic>> _alunos = {};
-  final Map<String, List<SessaoTreino>> _treinosPorAluno = {};
+  final Map<String, Map<String, dynamic>> _atletas = {};
+  final Map<String, List<SessaoTreino>> _treinosPorAtleta = {};
+  final Map<String, List<Nota>> _notasPorAtleta = {};
   
   final Map<String, Map<String, dynamic>> _profissionais = {
-    'medico_joao': {'id': 'medico_joao', 'nome': 'Dr. João Silva', 'tipo': 'medico', 'senha': '123'},
-    'nutri_maria': {'id': 'nutri_maria', 'nome': 'Nutri. Maria Santos', 'tipo': 'nutricionista', 'senha': '123'},
+    'medico_joao': {
+      'id': 'medico_joao',
+      'nome': 'Dr. João Silva',
+      'tipo': 'medico',
+      'email': 'medico@email.com',
+      'senha': '123',
+    },
+    'nutri_maria': {
+      'id': 'nutri_maria',
+      'nome': 'Nutri. Maria Santos',
+      'tipo': 'nutricionista',
+      'email': 'nutri@email.com',
+      'senha': '123',
+    },
   };
   
-  final Map<String, List<String>> _profissionaisAlunos = {
+  final Map<String, List<String>> _profissionaisAtletas = {
     'medico_joao': [],
     'nutri_maria': [],
   };
 
-  String cadastrarAluno(String nome, String email) {
+  String? _ativoLogadoId;
+  String? _ativoLogadoNome;
+
+  // ========== ATLETAS ==========
+  String cadastrarAtleta(String nome, String email, String senha) {
     String codigo = _gerarCodigo();
-    _alunos[codigo] = {
+    _atletas[codigo] = {
       'codigo': codigo,
       'nome': nome,
       'email': email,
+      'senha': senha,
       'dataCadastro': DateTime.now(),
     };
-    _treinosPorAluno[codigo] = [];
+    _treinosPorAtleta[codigo] = [];
     return codigo;
   }
 
@@ -41,24 +60,67 @@ class DatabaseService {
     return codigo;
   }
 
-  Map<String, dynamic>? getAluno(String codigo) {
-    return _alunos[codigo];
+  Map<String, dynamic>? getAtleta(String codigo) {
+    return _atletas[codigo];
   }
 
-  bool validarCodigoAluno(String codigo) {
-    return _alunos.containsKey(codigo);
+  bool validarCodigoAtleta(String codigo) {
+    return _atletas.containsKey(codigo);
+  }
+
+  // Autenticar Atleta por email e senha
+  Map<String, dynamic>? autenticarAtleta(String email, String senha) {
+    for (var atleta in _atletas.values) {
+      if (atleta['email'] == email && atleta['senha'] == senha) {
+        return atleta;
+      }
+    }
+    return null;
+  }
+
+  // Autenticar Médico
+  Map<String, dynamic>? autenticarMedico(String email, String senha) {
+    for (var medico in _profissionais.values) {
+      if (medico['tipo'] == 'medico' && medico['email'] == email && medico['senha'] == senha) {
+        return medico;
+      }
+    }
+    return null;
+  }
+
+  // Autenticar Nutricionista
+  Map<String, dynamic>? autenticarNutricionista(String email, String senha) {
+    for (var nutri in _profissionais.values) {
+      if (nutri['tipo'] == 'nutricionista' && nutri['email'] == email && nutri['senha'] == senha) {
+        return nutri;
+      }
+    }
+    return null;
   }
 
   void salvarTreino(SessaoTreino treino) {
-    if (_treinosPorAluno.containsKey(treino.alunoId)) {
-      _treinosPorAluno[treino.alunoId]!.insert(0, treino);
+    if (_treinosPorAtleta.containsKey(treino.atletaId)) {
+      _treinosPorAtleta[treino.atletaId]!.insert(0, treino);
     }
   }
 
-  List<SessaoTreino> getTreinosDoAluno(String alunoId) {
-    return _treinosPorAluno[alunoId] ?? [];
+  List<SessaoTreino> getTreinosDoAtleta(String atletaId) {
+    return _treinosPorAtleta[atletaId] ?? [];
   }
 
+  // ========== NOTAS ==========
+  void salvarNota(Nota nota) {
+    if (!_notasPorAtleta.containsKey(nota.atletaCodigo)) {
+      _notasPorAtleta[nota.atletaCodigo] = [];
+    }
+    _notasPorAtleta[nota.atletaCodigo]!.insert(0, nota);
+  }
+
+  List<Nota> getNotasDoAtleta(String atletaCodigo) {
+    return _notasPorAtleta[atletaCodigo] ?? [];
+  }
+
+  // ========== PROFISSIONAIS ==========
   bool autenticarProfissional(String usuario, String senha) {
     return _profissionais.containsKey(usuario) && _profissionais[usuario]!['senha'] == senha;
   }
@@ -67,43 +129,57 @@ class DatabaseService {
     return _profissionais[usuario];
   }
 
-  List<Map<String, dynamic>> getAlunosDoProfissional(String profissionalId) {
-    List<String> codigosAlunos = _profissionaisAlunos[profissionalId] ?? [];
-    List<Map<String, dynamic>> alunos = [];
-    for (String codigo in codigosAlunos) {
-      if (_alunos.containsKey(codigo)) {
-        alunos.add(_alunos[codigo]!);
-      }
-    }
-    return alunos;
+  void setAtivoLogado(String id, String nome) {
+    _ativoLogadoId = id;
+    _ativoLogadoNome = nome;
   }
 
-  bool adicionarAlunoAoProfissional(String profissionalId, String codigoAluno) {
-    if (!_alunos.containsKey(codigoAluno)) return false;
-    if (!_profissionaisAlunos.containsKey(profissionalId)) {
-      _profissionaisAlunos[profissionalId] = [];
+  Map<String, dynamic>? getAtivoLogado() {
+    if (_ativoLogadoId == null) return null;
+    return {'id': _ativoLogadoId, 'nome': _ativoLogadoNome};
+  }
+
+  void logout() {
+    _ativoLogadoId = null;
+    _ativoLogadoNome = null;
+  }
+
+  List<Map<String, dynamic>> getAtletasDoProfissional(String profissionalId) {
+    List<String> codigosAtletas = _profissionaisAtletas[profissionalId] ?? [];
+    List<Map<String, dynamic>> atletas = [];
+    for (String codigo in codigosAtletas) {
+      if (_atletas.containsKey(codigo)) {
+        atletas.add(_atletas[codigo]!);
+      }
     }
-    if (!_profissionaisAlunos[profissionalId]!.contains(codigoAluno)) {
-      _profissionaisAlunos[profissionalId]!.add(codigoAluno);
+    return atletas;
+  }
+
+  bool adicionarAtletaAoProfissional(String profissionalId, String codigoAtleta) {
+    if (!_atletas.containsKey(codigoAtleta)) return false;
+    if (!_profissionaisAtletas.containsKey(profissionalId)) {
+      _profissionaisAtletas[profissionalId] = [];
+    }
+    if (!_profissionaisAtletas[profissionalId]!.contains(codigoAtleta)) {
+      _profissionaisAtletas[profissionalId]!.add(codigoAtleta);
     }
     return true;
   }
 
-  // REMOVER VÍNCULO do profissional com o atleta
-  bool removerAlunoDoProfissional(String profissionalId, String alunoCodigo) {
-    if (_profissionaisAlunos.containsKey(profissionalId)) {
-      return _profissionaisAlunos[profissionalId]!.remove(alunoCodigo);
+  bool removerAtletaDoProfissional(String profissionalId, String atletaCodigo) {
+    if (_profissionaisAtletas.containsKey(profissionalId)) {
+      return _profissionaisAtletas[profissionalId]!.remove(atletaCodigo);
     }
     return false;
   }
 
   void carregarDadosExemplo() {
-    String aluno1 = cadastrarAluno("João Silva", "joao@email.com");
-    _treinosPorAluno[aluno1] = [
+    String atleta1 = cadastrarAtleta("João Silva", "joao@email.com", "123");
+    _treinosPorAtleta[atleta1] = [
       SessaoTreino(
         id: '1',
-        alunoId: aluno1,
-        alunoNome: "João Silva",
+        atletaId: atleta1,
+        atletaNome: "João Silva",
         data: DateTime.now().subtract(const Duration(days: 2)),
         modalidade: "Corrida de rua",
         duracaoMinutos: 75,
@@ -120,12 +196,12 @@ class DatabaseService {
       ),
     ];
 
-    String aluno2 = cadastrarAluno("Maria Oliveira", "maria@email.com");
-    _treinosPorAluno[aluno2] = [
+    String atleta2 = cadastrarAtleta("Maria Oliveira", "maria@email.com", "123");
+    _treinosPorAtleta[atleta2] = [
       SessaoTreino(
         id: '2',
-        alunoId: aluno2,
-        alunoNome: "Maria Oliveira",
+        atletaId: atleta2,
+        atletaNome: "Maria Oliveira",
         data: DateTime.now().subtract(const Duration(days: 1)),
         modalidade: "Natação",
         duracaoMinutos: 60,
@@ -142,18 +218,17 @@ class DatabaseService {
       ),
     ];
 
-    String aluno3 = cadastrarAluno("Pedro Costa", "pedro@email.com");
-    _treinosPorAluno[aluno3] = [];
+    String atleta3 = cadastrarAtleta("Pedro Costa", "pedro@email.com", "123");
+    _treinosPorAtleta[atleta3] = [];
 
-    _profissionaisAlunos['medico_joao'] = [aluno1, aluno2, aluno3];
-    _profissionaisAlunos['nutri_maria'] = [aluno1, aluno3];
+    _profissionaisAtletas['medico_joao'] = [atleta1, atleta2, atleta3];
+    _profissionaisAtletas['nutri_maria'] = [atleta1, atleta3];
 
     print('=== DADOS DE TESTE ===');
-    print('Médico: medico_joao / 123');
-    print('Nutricionista: nutri_maria / 123');
-    print('João código: $aluno1');
-    print('Maria código: $aluno2');
-    print('Pedro código: $aluno3');
+    print('Médico: medico@email.com / 123');
+    print('Nutricionista: nutri@email.com / 123');
+    print('Atletas: joao@email.com / 123, maria@email.com / 123, pedro@email.com / 123');
+    print('Códigos: $atleta1, $atleta2, $atleta3');
     print('=====================');
   }
 }

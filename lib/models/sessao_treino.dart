@@ -1,7 +1,7 @@
 class SessaoTreino {
   final String id;
-  final String alunoId;
-  final String alunoNome;
+  final String atletaId;
+  final String atletaNome;
   final DateTime data;
   final String modalidade;
   final int duracaoMinutos;
@@ -18,8 +18,8 @@ class SessaoTreino {
 
   SessaoTreino({
     required this.id,
-    required this.alunoId,
-    required this.alunoNome,
+    required this.atletaId,
+    required this.atletaNome,
     required this.data,
     required this.modalidade,
     required this.duracaoMinutos,
