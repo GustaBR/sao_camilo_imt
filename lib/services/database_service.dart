@@ -44,6 +44,10 @@ class DatabaseService {
       'nome': nome,
       'email': email,
       'senha': senha,
+      'idade': null,
+      'peso': null,
+      'altura': null,
+      'telefone': null,
       'dataCadastro': DateTime.now(),
     };
     _treinosPorAtleta[codigo] = [];
@@ -68,7 +72,6 @@ class DatabaseService {
     return _atletas.containsKey(codigo);
   }
 
-  // Autenticar Atleta por email e senha
   Map<String, dynamic>? autenticarAtleta(String email, String senha) {
     for (var atleta in _atletas.values) {
       if (atleta['email'] == email && atleta['senha'] == senha) {
@@ -78,7 +81,6 @@ class DatabaseService {
     return null;
   }
 
-  // Autenticar Médico
   Map<String, dynamic>? autenticarMedico(String email, String senha) {
     for (var medico in _profissionais.values) {
       if (medico['tipo'] == 'medico' && medico['email'] == email && medico['senha'] == senha) {
@@ -88,7 +90,6 @@ class DatabaseService {
     return null;
   }
 
-  // Autenticar Nutricionista
   Map<String, dynamic>? autenticarNutricionista(String email, String senha) {
     for (var nutri in _profissionais.values) {
       if (nutri['tipo'] == 'nutricionista' && nutri['email'] == email && nutri['senha'] == senha) {
@@ -96,6 +97,15 @@ class DatabaseService {
       }
     }
     return null;
+  }
+
+  void atualizarDadosAtleta(String codigo, {int? idade, double? peso, double? altura, String? telefone}) {
+    if (_atletas.containsKey(codigo)) {
+      if (idade != null) _atletas[codigo]!['idade'] = idade;
+      if (peso != null) _atletas[codigo]!['peso'] = peso;
+      if (altura != null) _atletas[codigo]!['altura'] = altura;
+      if (telefone != null) _atletas[codigo]!['telefone'] = telefone;
+    }
   }
 
   void salvarTreino(SessaoTreino treino) {

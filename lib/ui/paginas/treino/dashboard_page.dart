@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
+import '../../../screens/atleta_perfil_page.dart';
 import 'treino_pre_sessao.dart';
-import 'treino_intra_sessao.dart';
-import 'treino_pos_sessao.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -36,10 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _iniciarTreino() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TreinoPreSessao()),
-    );
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const TreinoPreSessao()));
     if (result == true) {
       _carregarHistorico();
     }
@@ -60,6 +56,20 @@ class _DashboardPageState extends State<DashboardPage> {
         title: const Text('Dashboard do Atleta'),
         backgroundColor: const Color(0xFFB30000),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              if (ativo != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AtletaPerfilPage(codigo: ativo['id'], nome: ativo['nome']),
+                  ),
+                );
+              }
+            },
+            tooltip: 'Meu Perfil',
+          ),
           IconButton(icon: const Icon(Icons.logout), onPressed: _sair, tooltip: 'Sair'),
         ],
       ),
@@ -78,26 +88,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           const Icon(Icons.fitness_center, size: 60, color: Color(0xFFB30000)),
                           const SizedBox(height: 16),
-                          Text(
-                            'Bem-vindo, ${ativo != null ? ativo['nome'] : 'Atleta'}!',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
+                          Text('Bem-vindo, ${ativo != null ? ativo['nome'] : 'Atleta'}!', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Registre seus treinos e acompanhe seu desempenho',
-                            style: TextStyle(fontSize: 16, color: Colors.black54),
-                            textAlign: TextAlign.center,
-                          ),
+                          const Text('Registre seus treinos e acompanhe seu desempenho', style: TextStyle(fontSize: 16, color: Colors.black54), textAlign: TextAlign.center),
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: _iniciarTreino,
                             icon: const Icon(Icons.play_arrow),
                             label: const Text('INICIAR NOVO TREINO', style: TextStyle(fontSize: 16)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB30000),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                           ),
                         ],
                       ),
@@ -118,11 +117,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(32),
-                                child: Text(
-                                  'Nenhum treino registrado ainda.\nInicie um novo treino!',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey),
-                                ),
+                                child: Text('Nenhum treino registrado ainda.\nInicie um novo treino!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                               ),
                             )
                           else
@@ -136,10 +131,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   margin: const EdgeInsets.only(bottom: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   child: ExpansionTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: const Color(0xFFB30000).withOpacity(0.1),
-                                      child: const Icon(Icons.fitness_center, color: Color(0xFFB30000)),
-                                    ),
+                                    leading: CircleAvatar(backgroundColor: const Color(0xFFB30000).withOpacity(0.1), child: const Icon(Icons.fitness_center, color: Color(0xFFB30000))),
                                     title: Text('${t.dataFormatada} - ${t.modalidade}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: Text('Duração: ${t.duracaoMinutos} min | Borg: ${t.escalaBorg}'),
                                     children: [

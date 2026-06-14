@@ -31,34 +31,24 @@ class _CadastroPageState extends State<CadastroPage> {
       setState(() => _isLoading = true);
 
       if (_tipoUsuario == 'atleta') {
-        String? codigo = await _db.cadastrarAtleta(
-          _nomeController.text.trim(),
-          _emailController.text.trim(),
-          _senhaController.text.trim(),
-        );
+        String? codigo = await _db.cadastrarAtleta(_nomeController.text.trim(), _emailController.text.trim(), _senhaController.text.trim());
         setState(() => _isLoading = false);
         if (codigo != null) {
           _mostrarSnackbar('Cadastro realizado! Seu código: $codigo', isError: false);
-          if (mounted) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
-          }
+          if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
         } else {
           _mostrarSnackbar('Erro ao cadastrar. Tente novamente.');
         }
       } else {
         setState(() => _isLoading = false);
         _mostrarSnackbar('Para médico/nutricionista, use as credenciais padrão', isError: false);
-        if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
-        }
+        if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
       }
     }
   }
 
   void _mostrarSnackbar(String msg, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green));
   }
 
   @override
@@ -85,17 +75,9 @@ class _CadastroPageState extends State<CadastroPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              TextFormField(
-                controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Informe seu nome' : null,
-              ),
+              TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Informe seu nome' : null),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Informe seu e-mail' : null,
-              ),
+              TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Informe seu e-mail' : null),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _senhaController,
@@ -104,10 +86,7 @@ class _CadastroPageState extends State<CadastroPage> {
                   labelText: 'Senha',
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(_senhaOculta ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _senhaOculta = !_senhaOculta),
-                  ),
+                  suffixIcon: IconButton(icon: Icon(_senhaOculta ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _senhaOculta = !_senhaOculta)),
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Informe uma senha';
@@ -123,10 +102,7 @@ class _CadastroPageState extends State<CadastroPage> {
                   labelText: 'Confirmar senha',
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(_confirmarSenhaOculta ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _confirmarSenhaOculta = !_confirmarSenhaOculta),
-                  ),
+                  suffixIcon: IconButton(icon: Icon(_confirmarSenhaOculta ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _confirmarSenhaOculta = !_confirmarSenhaOculta)),
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Confirme sua senha';
@@ -137,13 +113,8 @@ class _CadastroPageState extends State<CadastroPage> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _cadastrar,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB30000),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('CADASTRAR'),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(vertical: 16)),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('CADASTRAR'),
               ),
             ],
           ),

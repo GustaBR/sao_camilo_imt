@@ -23,9 +23,7 @@ class _AtletaCodigoPageState extends State<AtletaCodigoPage> {
   void _carregarCodigo() {
     final ativo = _db.getAtivoLogado();
     if (ativo != null) {
-      setState(() {
-        _codigoGerado = ativo['id'];
-      });
+      setState(() => _codigoGerado = ativo['id']);
     }
   }
 
@@ -37,11 +35,7 @@ class _AtletaCodigoPageState extends State<AtletaCodigoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meu Código'),
-        backgroundColor: const Color(0xFFB30000),
-        actions: [IconButton(icon: const Icon(Icons.logout), onPressed: _sair)],
-      ),
+      appBar: AppBar(title: const Text('Meu Código'), backgroundColor: const Color(0xFFB30000), actions: [IconButton(icon: const Icon(Icons.logout), onPressed: _sair)]),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -54,26 +48,15 @@ class _AtletaCodigoPageState extends State<AtletaCodigoPage> {
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFB30000), width: 3),
-                ),
+                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFB30000), width: 3)),
                 child: _isLoading
                     ? const CircularProgressIndicator()
-                    : SelectableText(
-                        _codigoGerado ?? 'Carregando...',
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4, color: Color(0xFFB30000)),
-                      ),
+                    : SelectableText(_codigoGerado ?? 'Carregando...', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4, color: Color(0xFFB30000))),
               ),
               const SizedBox(height: 24),
               const Text('Compartilhe este código com seu Médico e Nutricionista', textAlign: TextAlign.center),
               const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('VOLTAR'),
-              ),
+              ElevatedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back), label: const Text('VOLTAR')),
             ],
           ),
         ),
