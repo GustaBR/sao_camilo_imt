@@ -43,4 +43,24 @@ class SessaoTreino {
   String get dataFormatada {
     return "${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}";
   }
+
+  int get duracaoRealSegundos => duracaoMinutos * 60;
+
+  int get fluidosIngeridosMl => fluidosMl;
+
+  String get sintomasGastroDescricao => sintomasDescricao;
+
+  bool get roupasEncharcadas => false;
+
+  String get nivelHidratacao {
+    if (fluidosMl >= 1000) return "Excelente";
+    if (fluidosMl >= 700) return "Boa";
+    if (fluidosMl >= 500) return "Regular";
+    return "Atenção - baixa ingestão";
+  }
+
+  double get taxaSudorese {
+    if (duracaoMinutos <= 0) return 0;
+    return (fluidosMl / 1000) / (duracaoMinutos / 60);
+  }
 }

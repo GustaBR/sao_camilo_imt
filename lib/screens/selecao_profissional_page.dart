@@ -1,6 +1,6 @@
 // lib/screens/pages/selecao_profissional_page.dart
 import 'package:flutter/material.dart';
-import 'pages/login_profissional_page.dart';
+import 'login_profissional_page.dart';
 
 class SelecaoProfissionalPage extends StatelessWidget {
   const SelecaoProfissionalPage({super.key});
@@ -101,7 +101,7 @@ class SelecaoProfissionalPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const LoginProfissionalPage(tipoProfissional: 'medico'),
+                                builder: (context) => const LoginProfissionalPage(tipo: 'medico'),
                               ),
                             );
                           },
@@ -119,7 +119,7 @@ class SelecaoProfissionalPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const LoginProfissionalPage(tipoProfissional: 'instrutor'),
+                                builder: (context) => const LoginProfissionalPage(tipo: 'instrutor'),
                               ),
                             );
                           },
@@ -137,7 +137,7 @@ class SelecaoProfissionalPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const LoginProfissionalPage(tipoProfissional: 'nutricionista'),
+                                builder: (context) => const LoginProfissionalPage(tipo: 'nutricionista'),
                               ),
                             );
                           },

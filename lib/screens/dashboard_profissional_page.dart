@@ -1,7 +1,7 @@
 // lib/screens/pages/dashboard_profissional_page.dart
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import '../../models/sessao_treino.dart';
+import '../models/sessao_treino.dart';
 
 class DashboardProfissionalPage extends StatelessWidget {
   final String tipoProfissional;
