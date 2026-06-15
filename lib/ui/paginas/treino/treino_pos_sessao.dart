@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/radio_group.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
 
@@ -56,143 +56,257 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
   final TextEditingController _sintomasGastroController = TextEditingController();
   final TextEditingController _fadigaController = TextEditingController();
   final DatabaseService _db = DatabaseService();
+  final _supabase = Supabase.instance.client;
   
-  bool? _roupasEncharcadas, _trocaVestimenta, _temSintomasGastro, _temFadiga;
+  bool? _roupasEncharcadas;
+  bool? _trocaVestimenta;
+  bool? _temSintomasGastro;
+  bool? _temFadiga;
   int? _borgSelecionado;
+  bool _isSaving = false;
 
   Future<void> _finalizarTreino() async {
-    if (_roupasEncharcadas == null || _trocaVestimenta == null || _temSintomasGastro == null || _temFadiga == null || _borgSelecionado == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha todos os campos')));
+    if (_roupasEncharcadas == null) {
+      _mostrarErro('Informe se as roupas ficaram encharcadas');
+      return;
+    }
+    if (_trocaVestimenta == null) {
+      _mostrarErro('Informe se houve troca de vestimenta');
+      return;
+    }
+    if (_temSintomasGastro == null) {
+      _mostrarErro('Informe se teve sintomas gastrointestinais');
+      return;
+    }
+    if (_temFadiga == null) {
+      _mostrarErro('Informe se teve fadiga');
+      return;
+    }
+    if (_borgSelecionado == null) {
+      _mostrarErro('Selecione a intensidade na escala de Borg');
       return;
     }
     
-    if (_formKey.currentState!.validate()) {
-      final ativo = _db.getAtivoLogado();
-      if (ativo != null) {
-        final treino = SessaoTreino(
-          atletaId: ativo['id'],
-          atletaNome: ativo['nome'],
-          modalidade: widget.modalidade,
-          duracaoMinutos: widget.duracaoRealSegundos ~/ 60,
-          duracaoPrevistaMin: widget.duracaoPrevista,
-          duracaoRealSegundos: widget.duracaoRealSegundos,
-          fluidosMl: widget.fluidosIngeridosMl,
-          alimentosAgua: widget.alimentosAgua,
-          volumeUrinarioMl: widget.volumeUrinarioMl,
-          massaCorporalPreKg: widget.massaCorporalPre,
-          massaCorporalPosKg: double.parse(_massaCorporalController.text),
-          escalaBorg: _borgSelecionado!,
-          sensacaoTermica: widget.sensacaoTermica,
-          vento: widget.vento,
-          exposicaoSolar: widget.exposicaoSolar,
-          corUrina: widget.corUrina,
-          vestimenta: widget.vestimenta,
-          equipamento: widget.equipamento,
-          estaComSede: widget.estaComSede,
-          sintomasPreDescricao: widget.sintomasDescricao,
-          historicoHidratacao: widget.historicoHidratacao,
-          roupasEncharcadas: _roupasEncharcadas!,
-          trocaVestimenta: _trocaVestimenta!,
-          observacaoRoupas: _roupasEncharcadas == true || _trocaVestimenta == true
-              ? _observacaoRoupasController.text.trim()
-              : '',
-          teveSintomasGastro: _temSintomasGastro!,
-          sintomasDescricao: _temSintomasGastro == true ? _sintomasGastroController.text : '',
-          teveFadiga: _temFadiga!,
-          fadigaDescricao: _temFadiga == true ? _fadigaController.text : '',
-          temperatura: widget.temperatura,
-          umidade: widget.umidade,
-        );
-        
-        final salvo = await _db.salvarTreino(treino);
-        if (!mounted) return;
-
-        if (!salvo) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro ao salvar treino'), backgroundColor: Colors.red),
-          );
-          return;
-        }
-        
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    setState(() => _isSaving = true);
+    
+    try {
+      final session = _supabase.auth.currentSession;
+      if (session == null) {
+        _mostrarErro('Usuario nao autenticado');
+        setState(() => _isSaving = false);
+        return;
+      }
+      
+      final userId = session.user!.id;
+      
+      final pessoa = await _supabase
+          .from('pessoas')
+          .select()
+          .eq('auth_user_id', userId)
+          .maybeSingle();
+      
+      if (pessoa == null) {
+        _mostrarErro('Dados do usuario nao encontrados');
+        setState(() => _isSaving = false);
+        return;
+      }
+      
+      final atletaId = pessoa['id'].toString();
+      
+      final treino = SessaoTreino(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        atletaId: atletaId,
+        atletaNome: pessoa['nome'],
+        data: DateTime.now(),
+        modalidade: widget.modalidade,
+        duracaoMinutos: widget.duracaoRealSegundos ~/ 60,
+        fluidosMl: widget.fluidosIngeridosMl,
+        massaCorporalPreKg: widget.massaCorporalPre,
+        massaCorporalPosKg: double.parse(_massaCorporalController.text),
+        escalaBorg: _borgSelecionado!,
+        teveSintomasGastro: _temSintomasGastro!,
+        sintomasDescricao: _temSintomasGastro == true ? _sintomasGastroController.text : '',
+        teveFadiga: _temFadiga!,
+        fadigaDescricao: _temFadiga == true ? _fadigaController.text : '',
+        temperatura: widget.temperatura,
+        umidade: widget.umidade,
+      );
+      
+      final salvo = await _db.salvarTreino(treino);
+      
+      if (!mounted) return;
+      
+      if (salvo) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Treino finalizado com sucesso!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Treino finalizado com sucesso'), backgroundColor: Colors.green),
         );
-        
-        Navigator.popUntil(context, (route) => route.isFirst);
+        Navigator.pop(context, true);
+      } else {
+        _mostrarErro('Erro ao salvar o treino');
+      }
+    } catch (e) {
+      print('Erro ao finalizar treino: $e');
+      _mostrarErro('Erro inesperado ao salvar treino');
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
       }
     }
+  }
+  
+  void _mostrarErro(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem), backgroundColor: Colors.red),
+    );
+  }
+
+  Widget _buildRadioGroup(String titulo, bool? valor, Function(bool?) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(titulo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Expanded(
+              child: RadioListTile<bool>(
+                title: const Text('Sim'),
+                value: true,
+                groupValue: valor,
+                onChanged: onChanged,
+                activeColor: const Color(0xFFB30000),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            Expanded(
+              child: RadioListTile<bool>(
+                title: const Text('Nao'),
+                value: false,
+                groupValue: valor,
+                onChanged: onChanged,
+                activeColor: const Color(0xFFB30000),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pós-sessão'), centerTitle: true, backgroundColor: const Color(0xFFB30000)),
+      appBar: AppBar(
+        title: const Text('Pos-sessao'),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFB30000),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Após o treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text(
+                'Apos o treino',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 24),
+              
               TextFormField(
                 controller: _massaCorporalController,
-                decoration: const InputDecoration(labelText: 'Massa corporal pós-exercício (kg)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Massa corporal pos-exercicio (kg)',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? 'Informe a massa corporal' : null,
               ),
               const SizedBox(height: 24),
-              const Text('As roupas ficaram muito encharcadas?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              CustomRadioGroup(value: _roupasEncharcadas, onChanged: (v) => setState(() => _roupasEncharcadas = v)),
+              
+              _buildRadioGroup('As roupas ficaram muito encharcadas?', _roupasEncharcadas, (v) => setState(() => _roupasEncharcadas = v)),
               const SizedBox(height: 16),
-              const Text('Houve troca de vestimenta?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              CustomRadioGroup(value: _trocaVestimenta, onChanged: (v) => setState(() => _trocaVestimenta = v)),
+              
+              _buildRadioGroup('Houve troca de vestimenta?', _trocaVestimenta, (v) => setState(() => _trocaVestimenta = v)),
+              
               if (_roupasEncharcadas == true || _trocaVestimenta == true) ...[
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _observacaoRoupasController,
-                  decoration: const InputDecoration(labelText: 'Observação sobre roupas', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Observacao sobre roupas',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 3,
-                  validator: (v) => v!.isEmpty ? 'Descreva a situação' : null,
+                  validator: (v) => v!.isEmpty ? 'Descreva a situacao' : null,
                 ),
               ],
               const SizedBox(height: 24),
+              
               DropdownButtonFormField<int>(
                 value: _borgSelecionado,
-                decoration: const InputDecoration(labelText: 'Escala de Borg (6 a 20)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Escala de Borg (6 a 20)',
+                  border: OutlineInputBorder(),
+                ),
                 items: List.generate(15, (i) => DropdownMenuItem(value: i + 6, child: Text((i + 6).toString()))),
                 onChanged: (v) => setState(() => _borgSelecionado = v),
                 validator: (v) => v == null ? 'Selecione a intensidade' : null,
               ),
               const SizedBox(height: 24),
-              const Text('Teve sintomas gastrointestinais?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              CustomRadioGroup(value: _temSintomasGastro, onChanged: (v) => setState(() => _temSintomasGastro = v)),
+              
+              _buildRadioGroup('Teve sintomas gastrointestinais?', _temSintomasGastro, (v) => setState(() => _temSintomasGastro = v)),
+              
               if (_temSintomasGastro == true) ...[
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _sintomasGastroController,
-                  decoration: const InputDecoration(labelText: 'Descreva os sintomas', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva os sintomas',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 3,
                   validator: (v) => v!.isEmpty ? 'Descreva os sintomas' : null,
                 ),
               ],
               const SizedBox(height: 24),
-              const Text('Sentiu fadiga?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              CustomRadioGroup(value: _temFadiga, onChanged: (v) => setState(() => _temFadiga = v)),
+              
+              _buildRadioGroup('Sentiu fadiga?', _temFadiga, (v) => setState(() => _temFadiga = v)),
+              
               if (_temFadiga == true) ...[
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _fadigaController,
-                  decoration: const InputDecoration(labelText: 'Descreva a fadiga', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva a fadiga',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 3,
                   validator: (v) => v!.isEmpty ? 'Descreva a fadiga' : null,
                 ),
               ],
               const SizedBox(height: 32),
+              
               ElevatedButton(
-                onPressed: _finalizarTreino,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text('FINALIZAR TREINO', style: TextStyle(fontSize: 16)),
+                onPressed: _isSaving ? null : _finalizarTreino,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFB30000)),
+                      )
+                    : const Text('FINALIZAR TREINO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

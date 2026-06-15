@@ -13,6 +13,17 @@ class DatabaseService {
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
+  // ========== DELETAR TREINO ==========
+Future<bool> deletarTreino(String treinoId) async {
+  try {
+    await _supabase.from('treinos').delete().eq('id', treinoId);
+    return true;
+  } catch (error) {
+    debugPrint('Erro ao deletar treino: $error');
+    return false;
+  }
+}
+
   // Cliente oficial do Supabase
   final _supabase = Supabase.instance.client;
 
@@ -296,15 +307,16 @@ class DatabaseService {
   }
 
   // ========== TREINOS ==========
-  Future<bool> salvarTreino(SessaoTreino treino) async {
-    try {
-      await _supabase.from('treinos').insert(treino.toJson());
-      return true;
-    } catch (error) {
-      debugPrint('Erro ao salvar treino: $error');
-      return false;
-    }
+Future<bool> salvarTreino(SessaoTreino treino) async {
+  try {
+    final resultado = await _supabase.from('treinos').insert(treino.toJson());
+    print('Treino salvo com sucesso: $resultado');
+    return true;
+  } catch (error) {
+    print('Erro ao salvar treino: $error');
+    return false;
   }
+}
 
   Future<List<SessaoTreino>> getTreinosDoAtleta(String atletaId) async {
     try {

@@ -43,15 +43,11 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
 
   void _finalizarPreSessao() {
     if (_estaComSede == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe se está com sede antes do treino.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe se está com sede antes do treino.')));
       return;
     }
     if (_temSintomas == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe se sente algum sintoma antes do treino.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe se sente algum sintoma antes do treino.')));
       return;
     }
     if (_formKey.currentState!.validate()) {
@@ -93,24 +89,15 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
           key: _formKey,
           child: Column(
             children: [
-              const Text(
-                'Hidratação e sintomas',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              const Text('Hidratação e sintomas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 32),
-              const Text(
-                'Está com sede antes do treino?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text('Está com sede antes do treino?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               CustomRadioGroup(
                 value: _estaComSede,
                 onChanged: (v) => setState(() => _estaComSede = v),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Sente algum sintoma antes do treino?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text('Sente algum sintoma antes do treino?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               CustomRadioGroup(
                 value: _temSintomas,
                 onChanged: (v) => setState(() => _temSintomas = v),
@@ -119,10 +106,7 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _sintomasController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descreva os sintomas',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Descreva os sintomas', border: OutlineInputBorder()),
                   maxLines: 3,
                   validator: (v) => v!.isEmpty ? 'Descreva os sintomas' : null,
                 ),
@@ -130,10 +114,7 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _historicoHidratacaoController,
-                decoration: const InputDecoration(
-                  labelText: 'Quanta água você bebeu recentemente?',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Quanta água você bebeu recentemente?', border: OutlineInputBorder()),
                 maxLines: 3,
                 validator: (v) => v!.isEmpty ? 'Informe a hidratação recente' : null,
               ),
@@ -141,11 +122,12 @@ class _TreinoPreHidratacaoState extends State<TreinoPreHidratacao> {
               ElevatedButton(
                 onPressed: _finalizarPreSessao,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB30000),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('FINALIZAR PRÉ-SESSÃO', style: TextStyle(fontSize: 16)),
+                child: const Text('FINALIZAR PRÉ-SESSÃO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

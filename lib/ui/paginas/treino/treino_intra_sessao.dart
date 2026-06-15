@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'treino_pos_sessao.dart';
 
-
 class TreinoIntraSessao extends StatefulWidget {
   final double massaCorporalPre;
   final String modalidade;
@@ -77,9 +76,7 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
 
   void _finalizarIntraSessao() {
     if (_totalFluidosMl <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registre pelo menos uma ingestão de fluidos.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registre pelo menos uma ingestão de fluidos.')));
       return;
     }
     if (_formKey.currentState!.validate()) {
@@ -126,45 +123,30 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
           key: _formKey,
           child: Column(
             children: [
-              const Text(
-                'Durante o treino',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              const Text('Durante o treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    const Text(
-                      'Tempo de treino',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      _tempoFormatado,
-                      style: const TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFB30000),
-                      ),
-                    ),
+                    const Text('Tempo de treino', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(_tempoFormatado, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFFB30000))),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton(
                             onPressed: _iniciarTimer,
-                            child: Text(_segundosTreino == 0 ? 'INICIAR' : 'CONTINUAR'),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
+                            child: Text(_segundosTreino == 0 ? 'INICIAR' : 'CONTINUAR', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton(
                             onPressed: _timerRodando ? _pausarTimer : null,
-                            child: const Text('PAUSAR'),
+                            child: const Text('PAUSAR', style: TextStyle(fontSize: 14)),
                           ),
                         ),
                       ],
@@ -175,53 +157,40 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    const Text(
-                      'Total de fluidos ingeridos',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      '$_totalFluidosMl mL',
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFB30000),
-                      ),
-                    ),
+                    const Text('Total de fluidos ingeridos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text('$_totalFluidosMl mL', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFB30000))),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Registre sua ingestão de fluidos',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
+              const Text('Registre sua ingestão de fluidos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => _adicionarFluido(200),
-                      child: const Text('Copo\n+200 mL', textAlign: TextAlign.center),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
+                      child: const Text('Copo\n+200 mL', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => _adicionarFluido(500),
-                      child: const Text('Squeeze\n+500 mL', textAlign: TextAlign.center),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
+                      child: const Text('Squeeze\n+500 mL', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => _adicionarFluido(750),
-                      child: const Text('Garrafa\n+750 mL', textAlign: TextAlign.center),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
+                      child: const Text('Garrafa\n+750 mL', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
@@ -232,37 +201,29 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
                   Expanded(
                     child: TextFormField(
                       controller: _volumePersonalizadoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Outro volume (mL)',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Outro volume (mL)', border: OutlineInputBorder()),
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () => _adicionarFluido(int.tryParse(_volumePersonalizadoController.text) ?? 0),
-                    child: const Text('ADICIONAR'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
+                    child: const Text('ADICIONAR', style: TextStyle(fontSize: 14)),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _alimentosController,
-                decoration: const InputDecoration(
-                  labelText: 'Alimentos com água relevante',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Alimentos com água relevante', border: OutlineInputBorder()),
                 maxLines: 3,
                 validator: (v) => v!.isEmpty ? 'Informe os alimentos' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _volumeUrinarioController,
-                decoration: const InputDecoration(
-                  labelText: 'Volume urinário durante a sessão (mL)',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Volume urinário durante a sessão (mL)', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? 'Informe o volume urinário' : null,
               ),
@@ -270,11 +231,12 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
               ElevatedButton(
                 onPressed: _finalizarIntraSessao,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB30000),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('FINALIZAR INTRA-SESSÃO', style: TextStyle(fontSize: 16)),
+                child: const Text('FINALIZAR INTRA-SESSÃO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

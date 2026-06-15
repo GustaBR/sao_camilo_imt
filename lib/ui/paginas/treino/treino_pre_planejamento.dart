@@ -44,9 +44,7 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
 
   void _avancar() {
     if (_corUrinaSelecionada == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione a cor da urina.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione a cor da urina.')));
       return;
     }
     if (_formKey.currentState!.validate()) {
@@ -85,20 +83,11 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
           key: _formKey,
           child: Column(
             children: [
-              const Text(
-                'Planejamento do treino',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              const Text('Planejamento do treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              const Text(
-                'Registre a cor da urina, vestimenta e equipamentos.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
+              const Text('Registre a cor da urina, vestimenta e equipamentos.', style: TextStyle(fontSize: 16, color: Colors.black54)),
               const SizedBox(height: 32),
-              const Text(
-                'Cor da urina',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
+              const Text('Cor da urina', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -114,31 +103,14 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
                       width: 140,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: selecionada ? const Color(0xFFB30000) : Colors.grey,
-                          width: selecionada ? 3 : 1,
-                        ),
+                        border: Border.all(color: selecionada ? const Color(0xFFB30000) : Colors.grey, width: selecionada ? 3 : 1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: cor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.black26),
-                            ),
-                          ),
+                          Container(width: 44, height: 44, decoration: BoxDecoration(color: cor, shape: BoxShape.circle, border: Border.all(color: Colors.black26))),
                           const SizedBox(height: 8),
-                          Text(
-                            nome,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: selecionada ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
+                          Text(nome, textAlign: TextAlign.center, style: TextStyle(fontWeight: selecionada ? FontWeight.bold : FontWeight.normal)),
                         ],
                       ),
                     ),
@@ -148,32 +120,25 @@ class _TreinoPrePlanejamentoState extends State<TreinoPrePlanejamento> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _vestimentaController,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de vestimenta',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.checkroom),
-                ),
+                decoration: const InputDecoration(labelText: 'Tipo de vestimenta', border: OutlineInputBorder(), prefixIcon: Icon(Icons.checkroom)),
                 validator: (v) => v!.isEmpty ? 'Informe o tipo de vestimenta' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _equipamentoController,
-                decoration: const InputDecoration(
-                  labelText: 'Equipamento',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.fitness_center),
-                ),
+                decoration: const InputDecoration(labelText: 'Equipamento', border: OutlineInputBorder(), prefixIcon: Icon(Icons.fitness_center)),
                 validator: (v) => v!.isEmpty ? 'Informe o equipamento utilizado' : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _avancar,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB30000),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('PRÓXIMO', style: TextStyle(fontSize: 16)),
+                child: const Text('PRÓXIMO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
