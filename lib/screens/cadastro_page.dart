@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import 'tela_login.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -35,14 +34,14 @@ class _CadastroPageState extends State<CadastroPage> {
         setState(() => _isLoading = false);
         if (codigo != null) {
           _mostrarSnackbar('Cadastro realizado! Seu código: $codigo', isError: false);
-          if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
+          if (mounted) Navigator.pushReplacementNamed(context, '/login');
         } else {
           _mostrarSnackbar('Erro ao cadastrar. Tente novamente.');
         }
       } else {
         setState(() => _isLoading = false);
         _mostrarSnackbar('Para médico/nutricionista, use as credenciais padrão', isError: false);
-        if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TelaLogin()));
+        if (mounted) Navigator.pushReplacementNamed(context, '/login');
       }
     }
   }

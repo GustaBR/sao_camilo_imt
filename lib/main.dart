@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/tela_inicial.dart';
 import 'screens/tela_login.dart';
 import 'screens/cadastro_page.dart';
-import 'screens/atleta_codigo_page.dart';
 import 'screens/atleta_perfil_page.dart';
-import 'screens/medico_lista_page.dart';
-import 'screens/medico_detalhes_page.dart';
-import 'screens/nutricionista_lista_page.dart';
-import 'screens/nutricionista_detalhes_page.dart';
-import 'screens/adicionar_nota_page.dart';
 import 'ui/paginas/treino/dashboard_page.dart';
 import 'services/database_service.dart';
 
@@ -43,14 +37,14 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const TelaLogin());
           case '/cadastro':
             return MaterialPageRoute(builder: (_) => const CadastroPage());
-          case '/atleta/cadastro':
-            return MaterialPageRoute(builder: (_) => const AtletaCodigoPage());
           case '/atleta/perfil':
-            final args = settings.arguments as Map<String, String>?;
+            final args = settings.arguments;
+            final codigo = args is Map ? args['codigo']?.toString() ?? '' : '';
+            final nome = args is Map ? args['nome']?.toString() ?? '' : '';
             return MaterialPageRoute(
               builder: (_) => AtletaPerfilPage(
-                codigo: args?['codigo'] ?? '',
-                nome: args?['nome'] ?? '',
+                codigo: codigo,
+                nome: nome,
               ),
             );
           case '/atleta/treino':

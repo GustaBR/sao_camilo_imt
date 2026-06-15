@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'tela_login.dart';
-import 'cadastro_page.dart';
 
 class TelaInicial extends StatelessWidget {
   const TelaInicial({super.key});
@@ -33,7 +31,7 @@ class TelaInicial extends StatelessWidget {
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TelaLogin())),
+                        onPressed: () => Navigator.pushNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFB30000)),
                         child: const Text('ENTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
@@ -43,7 +41,7 @@ class TelaInicial extends StatelessWidget {
                       width: double.infinity,
                       height: 55,
                       child: OutlinedButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CadastroPage())),
+                        onPressed: () => Navigator.pushNamed(context, '/cadastro'),
                         style: OutlinedButton.styleFrom(backgroundColor: Colors.transparent, foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
                         child: const Text('CRIAR CONTA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),

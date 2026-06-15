@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
-import '../../../screens/atleta_perfil_page.dart';
 import 'treino_pre_sessao.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -60,11 +59,10 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.person),
             onPressed: () {
               if (ativo != null) {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => AtletaPerfilPage(codigo: ativo['id'], nome: ativo['nome']),
-                  ),
+                  '/atleta/perfil',
+                  arguments: {'codigo': ativo['id'].toString(), 'nome': ativo['nome'].toString()},
                 );
               }
             },

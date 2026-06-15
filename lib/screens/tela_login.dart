@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import '../ui/paginas/treino/dashboard_page.dart';
 import 'medico_lista_page.dart';
 import 'nutricionista_lista_page.dart';
-import 'cadastro_page.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -42,7 +40,7 @@ class _TelaLoginState extends State<TelaLogin> {
         _db.setAtivoLogado(atleta['codigo'], atleta['nome']);
         setState(() => _isLoading = false);
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardPage()));
+          Navigator.pushReplacementNamed(context, '/atleta/treino');
         }
       } else {
         setState(() => _isLoading = false);
@@ -146,7 +144,7 @@ class _TelaLoginState extends State<TelaLogin> {
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CadastroPage())),
+              onPressed: () => Navigator.pushReplacementNamed(context, '/cadastro'),
               child: const Text('Não tem conta? Cadastre-se'),
             ),
           ],
