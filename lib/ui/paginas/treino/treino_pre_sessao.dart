@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'treino_pre_ambiente.dart';
-import '../../../services/database_service.dart';
 
 class TreinoPreSessao extends StatefulWidget {
   const TreinoPreSessao({super.key});

@@ -63,7 +63,7 @@ class _ListaAtletasPageState extends State<ListaAtletasPage> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               String codigo = _codigoController.text.trim().toUpperCase();
 
               if (codigo.isEmpty) {
@@ -73,15 +73,16 @@ class _ListaAtletasPageState extends State<ListaAtletasPage> {
                 return;
               }
 
-              if (!_db.validarCodigoAtleta(codigo)) {
+              if (!(await _db.validarCodigoAtleta(codigo))) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Código inválido!'), backgroundColor: Colors.red),
                 );
                 return;
               }
 
-              if (_db.adicionarAtletaAoProfissional(widget.profissionalId, codigo)) {
-                var atleta = _db.getAtleta(codigo);
+              if (await _db.adicionarAtletaAoProfissional(widget.profissionalId, codigo)) {
+                var atleta = await _db.getAtleta(codigo);
+                if (!mounted) return;
                 setState(() {
                   _atletas.add(atleta!);
                 });
@@ -142,8 +143,9 @@ class _ListaAtletasPageState extends State<ListaAtletasPage> {
             child: const Text('CANCELAR'),
           ),
           ElevatedButton(
-            onPressed: () {
-              bool removido = _db.removerAtletaDoProfissional(widget.profissionalId, atleta['codigo']);
+            onPressed: () async {
+              bool removido = await _db.removerAtletaDoProfissional(widget.profissionalId, atleta['codigo']);
+              if (!mounted) return;
 
               if (removido) {
                 setState(() {
@@ -194,9 +196,10 @@ class _ListaAtletasPageState extends State<ListaAtletasPage> {
     );
   }
 
-  void _sair() {
-    _db.logoutProfissional();
-    Navigator.popUntil(context, (route) => route.isFirst);
+  Future<void> _sair() async {
+    await _db.logoutProfissional();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   @override

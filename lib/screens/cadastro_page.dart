@@ -12,13 +12,35 @@ class _CadastroPageState extends State<CadastroPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _registroController = TextEditingController();
+  final TextEditingController _dataNascimentoController = TextEditingController();
+  final TextEditingController _alturaController = TextEditingController();
+  final TextEditingController _pesoController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final TextEditingController _confirmarSenhaController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   bool _isLoading = false;
   String? _tipoUsuario;
+  String? _sexoSelecionado;
   bool _senhaOculta = true;
   bool _confirmarSenhaOculta = true;
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _emailController.dispose();
+    _registroController.dispose();
+    _dataNascimentoController.dispose();
+    _alturaController.dispose();
+    _pesoController.dispose();
+    _senhaController.dispose();
+    _confirmarSenhaController.dispose();
+    super.dispose();
+  }
+
+  double? _lerDecimal(String valor) {
+    return double.tryParse(valor.trim().replaceAll(',', '.'));
+  }
 
   void _cadastrar() async {
     if (_tipoUsuario == null) {
@@ -30,7 +52,16 @@ class _CadastroPageState extends State<CadastroPage> {
       setState(() => _isLoading = true);
 
       if (_tipoUsuario == 'atleta') {
-        String? codigo = await _db.cadastrarAtleta(_nomeController.text.trim(), _emailController.text.trim(), _senhaController.text.trim());
+        String? codigo = await _db.cadastrarAtleta(
+          _nomeController.text.trim(),
+          _emailController.text.trim(),
+          _senhaController.text.trim(),
+          dataNascimento: _dataNascimentoController.text.trim(),
+          altura: _lerDecimal(_alturaController.text)!,
+          peso: _lerDecimal(_pesoController.text)!,
+          sexo: _sexoSelecionado!,
+        );
+        if (!mounted) return;
         setState(() => _isLoading = false);
         if (codigo != null) {
           _mostrarSnackbar('Cadastro realizado! Seu código: $codigo', isError: false);
@@ -39,9 +70,21 @@ class _CadastroPageState extends State<CadastroPage> {
           _mostrarSnackbar('Erro ao cadastrar. Tente novamente.');
         }
       } else {
+        final profissional = await _db.cadastrarProfissional(
+          _nomeController.text.trim(),
+          _emailController.text.trim(),
+          _senhaController.text.trim(),
+          _tipoUsuario!,
+          _registroController.text.trim(),
+        );
+        if (!mounted) return;
         setState(() => _isLoading = false);
-        _mostrarSnackbar('Para médico/nutricionista, use as credenciais padrão', isError: false);
-        if (mounted) Navigator.pushReplacementNamed(context, '/login');
+        if (profissional != null) {
+          _mostrarSnackbar('Cadastro realizado!', isError: false);
+          if (mounted) Navigator.pushReplacementNamed(context, '/login');
+        } else {
+          _mostrarSnackbar('Erro ao cadastrar. Verifique os dados e tente novamente.');
+        }
       }
     }
   }
@@ -77,6 +120,72 @@ class _CadastroPageState extends State<CadastroPage> {
               TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Informe seu nome' : null),
               const SizedBox(height: 16),
               TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Informe seu e-mail' : null),
+              if (_tipoUsuario == 'atleta') ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _dataNascimentoController,
+                  decoration: const InputDecoration(labelText: 'Data de nascimento', hintText: 'AAAA-MM-DD', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.datetime,
+                  validator: (v) {
+                    final valor = v?.trim() ?? '';
+                    if (valor.isEmpty) return 'Informe sua data de nascimento';
+                    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(valor) || DateTime.tryParse(valor) == null) {
+                      return 'Use o formato AAAA-MM-DD';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _alturaController,
+                  decoration: const InputDecoration(labelText: 'Altura (cm)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final altura = _lerDecimal(v ?? '');
+                    if (altura == null) return 'Informe sua altura';
+                    if (altura <= 0) return 'Altura deve ser maior que zero';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _pesoController,
+                  decoration: const InputDecoration(labelText: 'Peso (kg)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    final peso = _lerDecimal(v ?? '');
+                    if (peso == null) return 'Informe seu peso';
+                    if (peso <= 0) return 'Peso deve ser maior que zero';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _sexoSelecionado,
+                  decoration: const InputDecoration(labelText: 'Sexo', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'masculino', child: Text('Masculino')),
+                    DropdownMenuItem(value: 'feminino', child: Text('Feminino')),
+                    DropdownMenuItem(value: 'outro', child: Text('Outro')),
+                    DropdownMenuItem(value: 'nao_informado', child: Text('Prefiro não informar')),
+                  ],
+                  onChanged: (value) => setState(() => _sexoSelecionado = value),
+                  validator: (value) => value == null ? 'Informe seu sexo' : null,
+                ),
+              ],
+              if (_tipoUsuario == 'medico' || _tipoUsuario == 'nutricionista') ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _registroController,
+                  decoration: InputDecoration(labelText: _tipoUsuario == 'medico' ? 'CRM' : 'CRN', border: const OutlineInputBorder()),
+                  validator: (v) {
+                    if ((_tipoUsuario == 'medico' || _tipoUsuario == 'nutricionista') && (v == null || v.trim().isEmpty)) {
+                      return _tipoUsuario == 'medico' ? 'Informe o CRM' : 'Informe o CRN';
+                    }
+                    return null;
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _senhaController,

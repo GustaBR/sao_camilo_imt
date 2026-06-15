@@ -6,6 +6,7 @@ import '../../../models/sessao_treino.dart';
 class TreinoPosSessao extends StatefulWidget {
   final double massaCorporalPre;
   final String modalidade;
+  final int duracaoPrevista;
   final int duracaoRealSegundos;
   final int fluidosIngeridosMl;
   final String alimentosAgua;
@@ -26,6 +27,7 @@ class TreinoPosSessao extends StatefulWidget {
     super.key,
     required this.massaCorporalPre,
     required this.modalidade,
+    required this.duracaoPrevista,
     required this.duracaoRealSegundos,
     required this.fluidosIngeridosMl,
     required this.alimentosAgua,
@@ -58,7 +60,7 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
   bool? _roupasEncharcadas, _trocaVestimenta, _temSintomasGastro, _temFadiga;
   int? _borgSelecionado;
 
-  void _finalizarTreino() {
+  Future<void> _finalizarTreino() async {
     if (_roupasEncharcadas == null || _trocaVestimenta == null || _temSintomasGastro == null || _temFadiga == null || _borgSelecionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha todos os campos')));
       return;
@@ -68,16 +70,32 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
       final ativo = _db.getAtivoLogado();
       if (ativo != null) {
         final treino = SessaoTreino(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
           atletaId: ativo['id'],
           atletaNome: ativo['nome'],
-          data: DateTime.now(),
           modalidade: widget.modalidade,
           duracaoMinutos: widget.duracaoRealSegundos ~/ 60,
+          duracaoPrevistaMin: widget.duracaoPrevista,
+          duracaoRealSegundos: widget.duracaoRealSegundos,
           fluidosMl: widget.fluidosIngeridosMl,
+          alimentosAgua: widget.alimentosAgua,
+          volumeUrinarioMl: widget.volumeUrinarioMl,
           massaCorporalPreKg: widget.massaCorporalPre,
           massaCorporalPosKg: double.parse(_massaCorporalController.text),
           escalaBorg: _borgSelecionado!,
+          sensacaoTermica: widget.sensacaoTermica,
+          vento: widget.vento,
+          exposicaoSolar: widget.exposicaoSolar,
+          corUrina: widget.corUrina,
+          vestimenta: widget.vestimenta,
+          equipamento: widget.equipamento,
+          estaComSede: widget.estaComSede,
+          sintomasPreDescricao: widget.sintomasDescricao,
+          historicoHidratacao: widget.historicoHidratacao,
+          roupasEncharcadas: _roupasEncharcadas!,
+          trocaVestimenta: _trocaVestimenta!,
+          observacaoRoupas: _roupasEncharcadas == true || _trocaVestimenta == true
+              ? _observacaoRoupasController.text.trim()
+              : '',
           teveSintomasGastro: _temSintomasGastro!,
           sintomasDescricao: _temSintomasGastro == true ? _sintomasGastroController.text : '',
           teveFadiga: _temFadiga!,
@@ -86,7 +104,15 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
           umidade: widget.umidade,
         );
         
-        _db.salvarTreino(treino);
+        final salvo = await _db.salvarTreino(treino);
+        if (!mounted) return;
+
+        if (!salvo) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao salvar treino'), backgroundColor: Colors.red),
+          );
+          return;
+        }
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Treino finalizado com sucesso!'), backgroundColor: Colors.green),

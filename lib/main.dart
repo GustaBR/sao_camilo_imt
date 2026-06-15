@@ -3,11 +3,14 @@ import 'screens/tela_inicial.dart';
 import 'screens/tela_login.dart';
 import 'screens/cadastro_page.dart';
 import 'screens/atleta_perfil_page.dart';
+import 'screens/medico_lista_page.dart';
+import 'screens/nutricionista_lista_page.dart';
 import 'ui/paginas/treino/dashboard_page.dart';
 import 'services/database_service.dart';
 
-void main() {
-  DatabaseService().carregarDadosExemplo();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseService().carregarSessaoSalva();
   runApp(const MyApp());
 }
 
@@ -16,6 +19,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sessao = DatabaseService().getAtivoLogado();
+
     return MaterialApp(
       title: 'Nutriesportiva',
       debugShowCheckedModeBanner: false,
@@ -28,10 +33,11 @@ class MyApp extends StatelessWidget {
           centerTitle: true,
         ),
       ),
-      initialRoute: '/',
+      home: _telaInicialDaSessao(sessao),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/':
+          case '/home':
             return MaterialPageRoute(builder: (_) => const TelaInicial());
           case '/login':
             return MaterialPageRoute(builder: (_) => const TelaLogin());
@@ -54,5 +60,24 @@ class MyApp extends StatelessWidget {
         }
       },
     );
+  }
+
+  Widget _telaInicialDaSessao(Map<String, dynamic>? sessao) {
+    if (sessao == null) return const TelaInicial();
+
+    final tipo = sessao['tipo']?.toString();
+    final id = sessao['id']?.toString() ?? '';
+    final nome = sessao['nome']?.toString() ?? '';
+
+    if (tipo == 'atleta') {
+      return const DashboardPage();
+    }
+    if (tipo == 'medico') {
+      return MedicoListaPage(profissionalId: id, profissionalNome: nome);
+    }
+    if (tipo == 'nutricionista') {
+      return NutricionistaListaPage(profissionalId: id, profissionalNome: nome);
+    }
+    return const TelaInicial();
   }
 }

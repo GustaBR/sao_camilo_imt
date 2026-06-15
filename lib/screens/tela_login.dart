@@ -35,9 +35,9 @@ class _TelaLoginState extends State<TelaLogin> {
     setState(() => _isLoading = true);
 
     if (_tipoSelecionado == 'atleta') {
-      var atleta = _db.autenticarAtleta(email, senha);
+      var atleta = await _db.autenticarAtleta(email, senha);
+      if (!mounted) return;
       if (atleta != null) {
-        _db.setAtivoLogado(atleta['codigo'], atleta['nome']);
         setState(() => _isLoading = false);
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/atleta/treino');
@@ -47,9 +47,9 @@ class _TelaLoginState extends State<TelaLogin> {
         _mostrarSnackbar('E-mail ou senha inválidos');
       }
     } else if (_tipoSelecionado == 'medico') {
-      var medico = _db.autenticarMedico(email, senha);
+      var medico = await _db.autenticarMedico(email, senha);
+      if (!mounted) return;
       if (medico != null) {
-        _db.setAtivoLogado(medico['id'], medico['nome']);
         setState(() => _isLoading = false);
         if (mounted) {
           Navigator.pushReplacement(
@@ -62,9 +62,9 @@ class _TelaLoginState extends State<TelaLogin> {
         _mostrarSnackbar('E-mail ou senha inválidos');
       }
     } else if (_tipoSelecionado == 'nutricionista') {
-      var nutri = _db.autenticarNutricionista(email, senha);
+      var nutri = await _db.autenticarNutricionista(email, senha);
+      if (!mounted) return;
       if (nutri != null) {
-        _db.setAtivoLogado(nutri['id'], nutri['nome']);
         setState(() => _isLoading = false);
         if (mounted) {
           Navigator.pushReplacement(
@@ -120,18 +120,6 @@ class _TelaLoginState extends State<TelaLogin> {
                 suffixIcon: IconButton(icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _obscureText = !_obscureText)),
               ),
             ),
-            if (_tipoSelecionado != 'atleta') ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: (_tipoSelecionado == 'medico' ? const Color(0xFFB30000) : Colors.green).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text(
-                  'Email: ${_tipoSelecionado == 'medico' ? 'medico@email.com' : 'nutri@email.com'} | Senha: 123',
-                  style: TextStyle(color: _tipoSelecionado == 'medico' ? const Color(0xFFB30000) : Colors.green, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

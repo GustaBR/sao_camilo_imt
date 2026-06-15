@@ -1,4 +1,6 @@
 class Nota {
+  static final DateTime _dataIndisponivel = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+
   final String id;
   final String atletaCodigo;
   final String profissionalId;
@@ -9,13 +11,39 @@ class Nota {
   final DateTime data;
 
   Nota({
-    required this.id,
+    String? id,
     required this.atletaCodigo,
     required this.profissionalId,
     required this.profissionalNome,
     required this.profissionalTipo,
     required this.titulo,
     required this.conteudo,
-    required this.data,
-  });
+    DateTime? data,
+  })  : id = id ?? '',
+        data = data ?? _dataIndisponivel;
+
+  factory Nota.fromJson(Map<String, dynamic> json) {
+    final dataTexto = json['data']?.toString();
+    final data = dataTexto == null ? null : DateTime.tryParse(dataTexto)?.toLocal();
+
+    return Nota(
+      id: json['id']?.toString() ?? '',
+      atletaCodigo: json['atletaCodigo']?.toString() ?? '',
+      profissionalId: json['profissionalId']?.toString() ?? '',
+      profissionalNome: json['profissionalNome']?.toString() ?? '',
+      profissionalTipo: json['profissionalTipo']?.toString() ?? '',
+      titulo: json['titulo']?.toString() ?? '',
+      conteudo: json['conteudo']?.toString() ?? '',
+      data: data,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'profissionalId': int.tryParse(profissionalId) ?? profissionalId,
+      'profissionalTipo': profissionalTipo,
+      'titulo': titulo,
+      'conteudo': conteudo,
+    };
+  }
 }

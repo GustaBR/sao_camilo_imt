@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../notifiers.dart';
+import 'notifiers.dart';
 import '../screens/tela_inicial.dart';
 import 'paginas/tela_perfil.dart';
 import 'widgets/navbar_widget.dart';

@@ -13,7 +13,7 @@ class NutricionistaDetalhesPage extends StatefulWidget {
 
 class _NutricionistaDetalhesPageState extends State<NutricionistaDetalhesPage> {
   final DatabaseService _db = DatabaseService();
-  late List<SessaoTreino> _treinos;
+  List<SessaoTreino> _treinos = [];
 
   @override
   void initState() {
@@ -21,8 +21,12 @@ class _NutricionistaDetalhesPageState extends State<NutricionistaDetalhesPage> {
     _carregarDados();
   }
 
-  void _carregarDados() {
-    _treinos = _db.getTreinosDoAtleta(widget.atletaCodigo);
+  Future<void> _carregarDados() async {
+    final treinos = await _db.getTreinosDoAtleta(widget.atletaCodigo);
+    if (!mounted) return;
+    setState(() {
+      _treinos = treinos;
+    });
   }
 
   @override

@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'treino_pos_sessao.dart';
-import '../../../services/database_service.dart';
-import '../../../models/sessao_treino.dart';
 
 
 class TreinoIntraSessao extends StatefulWidget {
@@ -92,6 +90,7 @@ class _TreinoIntraSessaoState extends State<TreinoIntraSessao> {
           builder: (context) => TreinoPosSessao(
             massaCorporalPre: widget.massaCorporalPre,
             modalidade: widget.modalidade,
+            duracaoPrevista: widget.duracaoPrevista,
             duracaoRealSegundos: _segundosTreino,
             fluidosIngeridosMl: _totalFluidosMl,
             alimentosAgua: _alimentosController.text,

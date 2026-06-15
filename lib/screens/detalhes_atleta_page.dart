@@ -28,6 +28,8 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<SessaoTreino> _treinos;
+  List<Nota> _notas = [];
+  bool _isLoadingNotas = true;
   final DatabaseService _db = DatabaseService();
 
   @override
@@ -35,6 +37,7 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     super.initState();
     _treinos = widget.treinos;
     _tabController = TabController(length: 2, vsync: this);
+    _carregarNotas();
     print('Detalhes do atleta: ${widget.atletaNome}, ${_treinos.length} treinos'); // Debug
   }
 
@@ -48,6 +51,15 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     List<SessaoTreino> novosTreinos = await _db.getTreinosDoAtleta(widget.atletaCodigo);
     setState(() {
       _treinos = novosTreinos;
+    });
+  }
+
+  Future<void> _carregarNotas() async {
+    final notas = await _db.getNotasDoAtleta(widget.atletaCodigo);
+    if (!mounted) return;
+    setState(() {
+      _notas = notas;
+      _isLoadingNotas = false;
     });
   }
 
@@ -74,7 +86,7 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     );
 
     if (result == true) {
-      setState(() {});
+      await _carregarNotas();
     }
   }
 
@@ -133,7 +145,11 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
   }
 
   Widget _buildNotasTab() {
-    final notas = _db.getNotasDoAtleta(widget.atletaCodigo);
+    if (_isLoadingNotas) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final notas = _notas;
 
     if (notas.isEmpty) {
       return Center(

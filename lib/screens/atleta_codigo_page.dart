@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import '../ui/paginas/treino/dashboard_page.dart';
 
 class AtletaCodigoPage extends StatefulWidget {
   const AtletaCodigoPage({super.key});
@@ -12,7 +11,7 @@ class AtletaCodigoPage extends StatefulWidget {
 class _AtletaCodigoPageState extends State<AtletaCodigoPage> {
   final DatabaseService _db = DatabaseService();
   String? _codigoGerado;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -27,9 +26,10 @@ class _AtletaCodigoPageState extends State<AtletaCodigoPage> {
     }
   }
 
-  void _sair() {
-    _db.logout();
-    Navigator.popUntil(context, (route) => route.isFirst);
+  Future<void> _sair() async {
+    await _db.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   @override

@@ -13,7 +13,7 @@ class MedicoListaPage extends StatefulWidget {
 
 class _MedicoListaPageState extends State<MedicoListaPage> {
   final DatabaseService _db = DatabaseService();
-  late List<Map<String, dynamic>> _atletas;
+  List<Map<String, dynamic>> _atletas = [];
   final TextEditingController _codigoController = TextEditingController();
 
   @override
@@ -22,9 +22,11 @@ class _MedicoListaPageState extends State<MedicoListaPage> {
     _carregarAtletas();
   }
 
-  void _carregarAtletas() {
+  Future<void> _carregarAtletas() async {
+    final atletas = await _db.getAtletasDoProfissional(widget.profissionalId);
+    if (!mounted) return;
     setState(() {
-      _atletas = _db.getAtletasDoProfissional(widget.profissionalId);
+      _atletas = atletas;
     });
   }
 
@@ -53,11 +55,12 @@ class _MedicoListaPageState extends State<MedicoListaPage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               String codigo = _codigoController.text.trim().toUpperCase();
-              if (_db.validarCodigoAtleta(codigo)) {
-                if (_db.adicionarAtletaAoProfissional(widget.profissionalId, codigo)) {
-                  _carregarAtletas();
+              if (await _db.validarCodigoAtleta(codigo)) {
+                if (await _db.adicionarAtletaAoProfissional(widget.profissionalId, codigo)) {
+                  await _carregarAtletas();
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Atleta adicionado!'), backgroundColor: Colors.green),
                   );
@@ -85,9 +88,10 @@ class _MedicoListaPageState extends State<MedicoListaPage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           ElevatedButton(
-            onPressed: () {
-              if (_db.removerAtletaDoProfissional(widget.profissionalId, codigo)) {
-                _carregarAtletas();
+            onPressed: () async {
+              if (await _db.removerAtletaDoProfissional(widget.profissionalId, codigo)) {
+                await _carregarAtletas();
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$nome removido'), backgroundColor: Colors.green),
                 );
@@ -102,9 +106,10 @@ class _MedicoListaPageState extends State<MedicoListaPage> {
     );
   }
 
-  void _sair() {
-    _db.logout();
-    Navigator.popUntil(context, (route) => route.isFirst);
+  Future<void> _sair() async {
+    await _db.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   @override

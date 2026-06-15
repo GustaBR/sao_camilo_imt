@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'treino_intra_sessao.dart';
 import '../../../services/radio_group.dart';
-import '../../../services/database_service.dart';
-import '../../../models/sessao_treino.dart';
 
 class TreinoPreHidratacao extends StatefulWidget {
   final double massaCorporalPre;

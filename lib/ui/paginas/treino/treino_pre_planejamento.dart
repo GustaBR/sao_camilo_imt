@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'treino_pre_hidratacao.dart';
-import '../../../services/database_service.dart';
-import '../../../models/sessao_treino.dart';
 
 class TreinoPrePlanejamento extends StatefulWidget {
   final double massaCorporalPre;

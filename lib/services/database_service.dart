@@ -1,253 +1,427 @@
-import 'dart:math';
-import '../models/sessao_treino.dart';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/nota.dart';
+import '../models/sessao_treino.dart';
+
+const String _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+const String _sessionStorageKey = 'nutri_esportiva_sessao';
+
+String _defaultApiBaseUrl() {
+  if (kIsWeb) return 'http://localhost:8000';
+  if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8000';
+  return 'http://localhost:8000';
+}
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
 
-  final Map<String, Map<String, dynamic>> _atletas = {};
-  final Map<String, List<SessaoTreino>> _treinosPorAtleta = {};
-  final Map<String, List<Nota>> _notasPorAtleta = {};
-  
-  final Map<String, Map<String, dynamic>> _profissionais = {
-    'medico_joao': {
-      'id': 'medico_joao',
-      'nome': 'Dr. João Silva',
-      'tipo': 'medico',
-      'email': 'medico@email.com',
-      'senha': '123',
-    },
-    'nutri_maria': {
-      'id': 'nutri_maria',
-      'nome': 'Nutri. Maria Santos',
-      'tipo': 'nutricionista',
-      'email': 'nutri@email.com',
-      'senha': '123',
-    },
-  };
-  
-  final Map<String, List<String>> _profissionaisAtletas = {
-    'medico_joao': [],
-    'nutri_maria': [],
-  };
-
   String? _ativoLogadoId;
   String? _ativoLogadoNome;
+  String? _ativoLogadoTipo;
+  String? _ativoLogadoCodigo;
+  Map<String, dynamic>? _profissionalLogado;
+
+  String get _apiBaseUrl {
+    if (_configuredApiBaseUrl.isNotEmpty) return _configuredApiBaseUrl;
+    return _defaultApiBaseUrl();
+  }
+
+  Uri _uri(String path) => Uri.parse('$_apiBaseUrl$path');
+
+  Future<void> carregarSessaoSalva() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawSession = prefs.getString(_sessionStorageKey);
+    if (rawSession == null || rawSession.isEmpty) return;
+
+    try {
+      final data = jsonDecode(rawSession);
+      if (data is Map<String, dynamic>) {
+        _aplicarSessao(data);
+      } else {
+        await prefs.remove(_sessionStorageKey);
+      }
+    } catch (error) {
+      debugPrint('Erro ao carregar sessao salva: $error');
+      await prefs.remove(_sessionStorageKey);
+    }
+  }
+
+  void _aplicarSessao(Map<String, dynamic> data) {
+    final id = data['id']?.toString();
+    final nome = data['nome']?.toString();
+    final tipo = data['tipo']?.toString();
+
+    if (id == null || id.isEmpty || nome == null || nome.isEmpty || tipo == null || tipo.isEmpty) {
+      return;
+    }
+
+    _ativoLogadoId = id;
+    _ativoLogadoNome = nome;
+    _ativoLogadoTipo = tipo;
+    _ativoLogadoCodigo = data['codigo']?.toString();
+    _profissionalLogado = tipo == 'atleta' ? null : Map<String, dynamic>.from(data);
+  }
+
+  Future<void> _salvarSessaoAtual() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_ativoLogadoId == null || _ativoLogadoNome == null || _ativoLogadoTipo == null) {
+      await prefs.remove(_sessionStorageKey);
+      return;
+    }
+
+    await prefs.setString(
+      _sessionStorageKey,
+      jsonEncode({
+        'id': _ativoLogadoId,
+        'nome': _ativoLogadoNome,
+        'tipo': _ativoLogadoTipo,
+        'codigo': _ativoLogadoCodigo,
+        if (_profissionalLogado?['email'] != null) 'email': _profissionalLogado?['email'],
+      }),
+    );
+  }
+
+  Future<void> _limparSessaoSalva() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionStorageKey);
+  }
+
+  Future<dynamic> _request(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final headers = {'Content-Type': 'application/json'};
+    late http.Response response;
+
+    switch (method) {
+      case 'GET':
+        response = await http.get(_uri(path), headers: headers);
+        break;
+      case 'POST':
+        response = await http.post(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+        break;
+      case 'PATCH':
+        response = await http.patch(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+        break;
+      case 'DELETE':
+        response = await http.delete(_uri(path), headers: headers);
+        break;
+      default:
+        throw ArgumentError('Metodo HTTP nao suportado: $method');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Erro ${response.statusCode}: ${utf8.decode(response.bodyBytes)}');
+    }
+
+    if (response.bodyBytes.isEmpty) return null;
+    return jsonDecode(utf8.decode(response.bodyBytes));
+  }
 
   // ========== ATLETAS ==========
-  String cadastrarAtleta(String nome, String email, String senha) {
-    String codigo = _gerarCodigo();
-    _atletas[codigo] = {
-      'codigo': codigo,
-      'nome': nome,
-      'email': email,
-      'senha': senha,
-      'idade': null,
-      'peso': null,
-      'altura': null,
-      'telefone': null,
-      'dataCadastro': DateTime.now(),
-    };
-    _treinosPorAtleta[codigo] = [];
-    return codigo;
-  }
-
-  String _gerarCodigo() {
-    const String chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    Random random = Random();
-    String codigo = '';
-    for (int i = 0; i < 6; i++) {
-      codigo += chars[random.nextInt(chars.length)];
-    }
-    return codigo;
-  }
-
-  Map<String, dynamic>? getAtleta(String codigo) {
-    return _atletas[codigo];
-  }
-
-  bool validarCodigoAtleta(String codigo) {
-    return _atletas.containsKey(codigo);
-  }
-
-  Map<String, dynamic>? autenticarAtleta(String email, String senha) {
-    for (var atleta in _atletas.values) {
-      if (atleta['email'] == email && atleta['senha'] == senha) {
-        return atleta;
+  Future<String?> cadastrarAtleta(
+    String nome,
+    String email,
+    String senha, {
+    required String dataNascimento,
+    required double altura,
+    required double peso,
+    required String sexo,
+  }) async {
+    try {
+      final alturaBanco = altura > 3 ? altura / 100 : altura;
+      final data = await _request(
+        'POST',
+        '/atletas',
+        body: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'dataNascimento': dataNascimento,
+          'altura': alturaBanco,
+          'peso': peso,
+          'sexo': sexo,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        return data['codigo']?.toString();
       }
+    } catch (error) {
+      debugPrint('Erro ao cadastrar atleta: $error');
     }
     return null;
   }
 
-  Map<String, dynamic>? autenticarMedico(String email, String senha) {
-    for (var medico in _profissionais.values) {
-      if (medico['tipo'] == 'medico' && medico['email'] == email && medico['senha'] == senha) {
-        return medico;
+  Future<Map<String, dynamic>?> cadastrarProfissional(
+    String nome,
+    String email,
+    String senha,
+    String tipo,
+    String registro,
+  ) async {
+    try {
+      final data = await _request(
+        'POST',
+        '/profissionais',
+        body: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'tipo': tipo,
+          'registro': registro,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        return data;
       }
+    } catch (error) {
+      debugPrint('Erro ao cadastrar profissional: $error');
     }
     return null;
   }
 
-  Map<String, dynamic>? autenticarNutricionista(String email, String senha) {
-    for (var nutri in _profissionais.values) {
-      if (nutri['tipo'] == 'nutricionista' && nutri['email'] == email && nutri['senha'] == senha) {
-        return nutri;
+  Future<Map<String, dynamic>?> getAtleta(String codigo) async {
+    try {
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(codigo)}');
+      if (data is Map<String, dynamic>) {
+        final altura = data['altura'];
+        if (altura is num) {
+          data['altura'] = (altura * 100).round();
+        }
+        return data;
       }
+    } catch (error) {
+      debugPrint('Erro ao buscar atleta: $error');
     }
     return null;
   }
 
-  void atualizarDadosAtleta(String codigo, {int? idade, double? peso, double? altura, String? telefone}) {
-    if (_atletas.containsKey(codigo)) {
-      if (idade != null) _atletas[codigo]!['idade'] = idade;
-      if (peso != null) _atletas[codigo]!['peso'] = peso;
-      if (altura != null) _atletas[codigo]!['altura'] = altura;
-      if (telefone != null) _atletas[codigo]!['telefone'] = telefone;
+  Future<bool> validarCodigoAtleta(String codigo) async {
+    final atleta = await getAtleta(codigo);
+    return atleta != null;
+  }
+
+  Future<Map<String, dynamic>?> autenticarAtleta(String email, String senha) {
+    return _autenticar(email, senha, 'atleta');
+  }
+
+  Future<Map<String, dynamic>?> autenticarMedico(String email, String senha) {
+    return _autenticar(email, senha, 'medico');
+  }
+
+  Future<Map<String, dynamic>?> autenticarNutricionista(String email, String senha) {
+    return _autenticar(email, senha, 'nutricionista');
+  }
+
+  Future<Map<String, dynamic>?> _autenticar(String email, String senha, String tipo) async {
+    try {
+      final data = await _request(
+        'POST',
+        '/auth/login',
+        body: {'email': email, 'senha': senha, 'tipo': tipo},
+      );
+      if (data is Map<String, dynamic>) {
+        _ativoLogadoId = tipo == 'atleta'
+            ? data['codigo']?.toString() ?? data['id']?.toString()
+            : data['id']?.toString();
+        _ativoLogadoNome = data['nome']?.toString();
+        _ativoLogadoTipo = data['tipo']?.toString();
+        _ativoLogadoCodigo = data['codigo']?.toString();
+        if (tipo != 'atleta') {
+          _profissionalLogado = data;
+        } else {
+          _profissionalLogado = null;
+        }
+        await _salvarSessaoAtual();
+        return data;
+      }
+    } catch (error) {
+      debugPrint('Erro ao autenticar $tipo: $error');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> atualizarDadosAtleta(
+    String codigo, {
+    double? peso,
+    double? altura,
+    String? dataNascimento,
+    String? sexo,
+  }) async {
+    try {
+      final alturaBanco = altura != null && altura > 3 ? altura / 100 : altura;
+      final data = await _request(
+        'PATCH',
+        '/atletas/${Uri.encodeComponent(codigo)}',
+        body: {
+          'peso': peso,
+          'altura': alturaBanco,
+          'dataNascimento': dataNascimento,
+          'sexo': sexo,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        final altura = data['altura'];
+        if (altura is num) {
+          data['altura'] = (altura * 100).round();
+        }
+        return data;
+      }
+    } catch (error) {
+      debugPrint('Erro ao atualizar atleta: $error');
+    }
+    return null;
+  }
+
+  Future<bool> salvarTreino(SessaoTreino treino) async {
+    try {
+      await _request('POST', '/treinos', body: treino.toJson());
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao salvar treino: $error');
+      return false;
     }
   }
 
-  void salvarTreino(SessaoTreino treino) {
-    if (_treinosPorAtleta.containsKey(treino.atletaId)) {
-      _treinosPorAtleta[treino.atletaId]!.insert(0, treino);
+  Future<List<SessaoTreino>> getTreinosDoAtleta(String atletaId) async {
+    try {
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(atletaId)}/treinos');
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(SessaoTreino.fromJson)
+            .toList();
+      }
+    } catch (error) {
+      debugPrint('Erro ao buscar treinos: $error');
     }
-  }
-
-  List<SessaoTreino> getTreinosDoAtleta(String atletaId) {
-    return _treinosPorAtleta[atletaId] ?? [];
+    return [];
   }
 
   // ========== NOTAS ==========
-  void salvarNota(Nota nota) {
-    if (!_notasPorAtleta.containsKey(nota.atletaCodigo)) {
-      _notasPorAtleta[nota.atletaCodigo] = [];
+  Future<bool> salvarNota(Nota nota) async {
+    try {
+      await _request(
+        'POST',
+        '/atletas/${Uri.encodeComponent(nota.atletaCodigo)}/notas',
+        body: nota.toJson(),
+      );
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao salvar nota: $error');
+      return false;
     }
-    _notasPorAtleta[nota.atletaCodigo]!.insert(0, nota);
   }
 
-  List<Nota> getNotasDoAtleta(String atletaCodigo) {
-    return _notasPorAtleta[atletaCodigo] ?? [];
+  Future<List<Nota>> getNotasDoAtleta(String atletaCodigo) async {
+    try {
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(atletaCodigo)}/notas');
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(Nota.fromJson)
+            .toList();
+      }
+    } catch (error) {
+      debugPrint('Erro ao buscar notas: $error');
+    }
+    return [];
   }
 
   // ========== PROFISSIONAIS ==========
-  bool autenticarProfissional(String usuario, String senha) {
-    return _profissionais.containsKey(usuario) && _profissionais[usuario]!['senha'] == senha;
+  Future<bool> autenticarProfissional(String usuario, String senha) async {
+    final medico = await autenticarMedico(usuario, senha);
+    if (medico != null) return true;
+    final nutricionista = await autenticarNutricionista(usuario, senha);
+    return nutricionista != null;
   }
 
   Map<String, dynamic>? getProfissional(String usuario) {
-    return _profissionais[usuario];
-  }
-
-  void setAtivoLogado(String id, String nome) {
-    _ativoLogadoId = id;
-    _ativoLogadoNome = nome;
+    if (_profissionalLogado?['id']?.toString() == usuario) {
+      return _profissionalLogado;
+    }
+    return null;
   }
 
   Map<String, dynamic>? getAtivoLogado() {
     if (_ativoLogadoId == null) return null;
-    return {'id': _ativoLogadoId, 'nome': _ativoLogadoNome};
+    return {
+      'id': _ativoLogadoId,
+      'nome': _ativoLogadoNome,
+      'tipo': _ativoLogadoTipo,
+      'codigo': _ativoLogadoCodigo,
+    };
   }
 
   Map<String, dynamic>? getProfissionalLogado() {
-    if (_ativoLogadoId == null) return null;
-    return getProfissional(_ativoLogadoId!);
+    return _profissionalLogado;
   }
 
-  void logout() {
+  Future<void> logout() async {
     _ativoLogadoId = null;
     _ativoLogadoNome = null;
+    _ativoLogadoTipo = null;
+    _ativoLogadoCodigo = null;
+    _profissionalLogado = null;
+    await _limparSessaoSalva();
   }
 
-  void logoutProfissional() {
-    logout();
-  }
-
-  List<Map<String, dynamic>> getAtletasDoProfissional(String profissionalId) {
-    List<String> codigosAtletas = _profissionaisAtletas[profissionalId] ?? [];
-    List<Map<String, dynamic>> atletas = [];
-    for (String codigo in codigosAtletas) {
-      if (_atletas.containsKey(codigo)) {
-        atletas.add(_atletas[codigo]!);
+  Future<List<Map<String, dynamic>>> getAtletasDoProfissional(String profissionalId) async {
+    try {
+      final data = await _request(
+        'GET',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas',
+      );
+      if (data is List) {
+        return data.whereType<Map<String, dynamic>>().toList();
       }
+    } catch (error) {
+      debugPrint('Erro ao buscar atletas do profissional: $error');
     }
-    return atletas;
+    return [];
   }
 
-  bool adicionarAtletaAoProfissional(String profissionalId, String codigoAtleta) {
-    if (!_atletas.containsKey(codigoAtleta)) return false;
-    if (!_profissionaisAtletas.containsKey(profissionalId)) {
-      _profissionaisAtletas[profissionalId] = [];
+  Future<bool> adicionarAtletaAoProfissional(String profissionalId, String codigoAtleta) async {
+    try {
+      final data = await _request(
+        'POST',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas',
+        body: {'codigo': codigoAtleta},
+      );
+      if (data is Map<String, dynamic>) {
+        return data['ok'] == true;
+      }
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao adicionar atleta ao profissional: $error');
+      return false;
     }
-    if (!_profissionaisAtletas[profissionalId]!.contains(codigoAtleta)) {
-      _profissionaisAtletas[profissionalId]!.add(codigoAtleta);
-    }
-    return true;
   }
 
-  bool removerAtletaDoProfissional(String profissionalId, String atletaCodigo) {
-    if (_profissionaisAtletas.containsKey(profissionalId)) {
-      return _profissionaisAtletas[profissionalId]!.remove(atletaCodigo);
+  Future<bool> removerAtletaDoProfissional(String profissionalId, String atletaCodigo) async {
+    try {
+      final data = await _request(
+        'DELETE',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas/${Uri.encodeComponent(atletaCodigo)}',
+      );
+      if (data is Map<String, dynamic>) {
+        return data['ok'] == true;
+      }
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao remover atleta do profissional: $error');
+      return false;
     }
-    return false;
   }
 
-  void carregarDadosExemplo() {
-    String atleta1 = cadastrarAtleta("João Silva", "joao@email.com", "123");
-    _treinosPorAtleta[atleta1] = [
-      SessaoTreino(
-        id: '1',
-        atletaId: atleta1,
-        atletaNome: "João Silva",
-        data: DateTime.now().subtract(const Duration(days: 2)),
-        modalidade: "Corrida de rua",
-        duracaoMinutos: 75,
-        fluidosMl: 750,
-        massaCorporalPreKg: 72.5,
-        massaCorporalPosKg: 71.8,
-        escalaBorg: 14,
-        teveSintomasGastro: false,
-        sintomasDescricao: "",
-        teveFadiga: true,
-        fadigaDescricao: "Cansaço nas pernas",
-        temperatura: 28,
-        umidade: 65,
-      ),
-    ];
-
-    String atleta2 = cadastrarAtleta("Maria Oliveira", "maria@email.com", "123");
-    _treinosPorAtleta[atleta2] = [
-      SessaoTreino(
-        id: '2',
-        atletaId: atleta2,
-        atletaNome: "Maria Oliveira",
-        data: DateTime.now().subtract(const Duration(days: 1)),
-        modalidade: "Natação",
-        duracaoMinutos: 60,
-        fluidosMl: 900,
-        massaCorporalPreKg: 65.0,
-        massaCorporalPosKg: 64.5,
-        escalaBorg: 13,
-        teveSintomasGastro: true,
-        sintomasDescricao: "Leve náusea",
-        teveFadiga: true,
-        fadigaDescricao: "Cansaço geral",
-        temperatura: 26,
-        umidade: 70,
-      ),
-    ];
-
-    String atleta3 = cadastrarAtleta("Pedro Costa", "pedro@email.com", "123");
-    _treinosPorAtleta[atleta3] = [];
-
-    _profissionaisAtletas['medico_joao'] = [atleta1, atleta2, atleta3];
-    _profissionaisAtletas['nutri_maria'] = [atleta1, atleta3];
-
-    print('=== DADOS DE TESTE ===');
-    print('Médico: medico@email.com / 123');
-    print('Nutricionista: nutri@email.com / 123');
-    print('Atletas: joao@email.com / 123, maria@email.com / 123, pedro@email.com / 123');
-    print('Códigos: $atleta1, $atleta2, $atleta3');
-    print('=====================');
+  Future<void> logoutProfissional() {
+    return logout();
   }
 }

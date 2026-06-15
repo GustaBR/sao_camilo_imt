@@ -41,7 +41,7 @@ class _LoginProfissionalPageState extends State<LoginProfissionalPage> {
       return;
     }
     
-    List<Map<String, dynamic>> atletas = _db.getAtletasDoProfissional(profissionalId);
+    List<Map<String, dynamic>> atletas = await _db.getAtletasDoProfissional(profissionalId);
     
     if (mounted) {
       Navigator.pushReplacement(

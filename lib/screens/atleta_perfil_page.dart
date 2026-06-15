@@ -16,11 +16,11 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
   Map<String, dynamic> _dadosAtleta = {};
   List<SessaoTreino> _treinos = [];
   bool _isLoading = true;
+  String? _sexoSelecionado;
 
-  final TextEditingController _idadeController = TextEditingController();
+  final TextEditingController _dataNascimentoController = TextEditingController();
   final TextEditingController _pesoController = TextEditingController();
   final TextEditingController _alturaController = TextEditingController();
-  final TextEditingController _telefoneController = TextEditingController();
 
   @override
   void initState() {
@@ -30,42 +30,74 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
 
   @override
   void dispose() {
-    _idadeController.dispose();
+    _dataNascimentoController.dispose();
     _pesoController.dispose();
     _alturaController.dispose();
-    _telefoneController.dispose();
     super.dispose();
   }
 
-  void _carregarDados() {
-    final atleta = _db.getAtleta(widget.codigo);
+  Future<void> _carregarDados() async {
+    final atleta = await _db.getAtleta(widget.codigo);
+    final treinos = await _db.getTreinosDoAtleta(widget.codigo);
+    if (!mounted) return;
+
     if (atleta != null) {
       _dadosAtleta = atleta;
-      _idadeController.text = _dadosAtleta['idade']?.toString() ?? '';
+      _dataNascimentoController.text = _dadosAtleta['dataNascimento']?.toString() ?? '';
       _pesoController.text = _dadosAtleta['peso']?.toString() ?? '';
       _alturaController.text = _dadosAtleta['altura']?.toString() ?? '';
-      _telefoneController.text = _dadosAtleta['telefone'] ?? '';
+      _sexoSelecionado = _dadosAtleta['sexo']?.toString();
     }
-    _treinos = _db.getTreinosDoAtleta(widget.codigo);
+    _treinos = treinos;
     setState(() => _isLoading = false);
   }
 
-  void _salvarDadosAdicionais() {
-    _db.atualizarDadosAtleta(
+  double? _lerDecimal(String valor) {
+    return double.tryParse(valor.trim().replaceAll(',', '.'));
+  }
+
+  Future<void> _salvarDadosAdicionais() async {
+    final dataNascimento = _dataNascimentoController.text.trim();
+
+    if (dataNascimento.isNotEmpty &&
+        (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dataNascimento) ||
+            DateTime.tryParse(dataNascimento) == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe a data no formato AAAA-MM-DD'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final atletaAtualizado = await _db.atualizarDadosAtleta(
       widget.codigo,
-      idade: _idadeController.text.isNotEmpty ? int.tryParse(_idadeController.text) : null,
-      peso: _pesoController.text.isNotEmpty ? double.tryParse(_pesoController.text) : null,
-      altura: _alturaController.text.isNotEmpty ? double.tryParse(_alturaController.text) : null,
-      telefone: _telefoneController.text.isNotEmpty ? _telefoneController.text : null,
+      peso: _pesoController.text.isNotEmpty ? _lerDecimal(_pesoController.text) : null,
+      altura: _alturaController.text.isNotEmpty ? _lerDecimal(_alturaController.text) : null,
+      dataNascimento: dataNascimento.isNotEmpty ? dataNascimento : null,
+      sexo: _sexoSelecionado,
     );
+    if (!mounted) return;
+
+    if (atletaAtualizado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao atualizar dados'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _dadosAtleta = atletaAtualizado;
+      _sexoSelecionado = atletaAtualizado['sexo']?.toString();
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Dados atualizados!'), backgroundColor: Colors.green),
     );
   }
 
-  void _sair() {
-    _db.logout();
-    Navigator.popUntil(context, (route) => route.isFirst);
+  Future<void> _sair() async {
+    await _db.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   int get _totalTreinos => _treinos.length;
@@ -142,10 +174,27 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                     ListTile(leading: const Icon(Icons.badge, color: Colors.grey), title: const Text('Nome completo'), subtitle: Text(_dadosAtleta['nome'] ?? 'Não informado'), dense: true),
                     ListTile(leading: const Icon(Icons.email, color: Colors.grey), title: const Text('E-mail'), subtitle: Text(_dadosAtleta['email'] ?? 'Não informado'), dense: true),
                     const Divider(),
-                    ListTile(leading: const Icon(Icons.cake, color: Colors.grey), title: const Text('Idade'), subtitle: TextField(controller: _idadeController, decoration: const InputDecoration(hintText: 'Digite sua idade', border: InputBorder.none), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)), dense: true),
+                    ListTile(leading: const Icon(Icons.cake, color: Colors.grey), title: const Text('Data de nascimento'), subtitle: TextField(controller: _dataNascimentoController, decoration: const InputDecoration(hintText: 'AAAA-MM-DD', border: InputBorder.none), keyboardType: TextInputType.datetime, style: const TextStyle(fontSize: 14)), dense: true),
+                    ListTile(leading: const Icon(Icons.calendar_today, color: Colors.grey), title: const Text('Idade'), subtitle: Text(_dadosAtleta['idade'] == null ? 'Não informado' : '${_dadosAtleta['idade']} anos'), dense: true),
                     ListTile(leading: const Icon(Icons.monitor_weight, color: Colors.grey), title: const Text('Peso (kg)'), subtitle: TextField(controller: _pesoController, decoration: const InputDecoration(hintText: 'Digite seu peso', border: InputBorder.none), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)), dense: true),
                     ListTile(leading: const Icon(Icons.height, color: Colors.grey), title: const Text('Altura (cm)'), subtitle: TextField(controller: _alturaController, decoration: const InputDecoration(hintText: 'Digite sua altura', border: InputBorder.none), keyboardType: TextInputType.number, style: const TextStyle(fontSize: 14)), dense: true),
-                    ListTile(leading: const Icon(Icons.phone, color: Colors.grey), title: const Text('Telefone'), subtitle: TextField(controller: _telefoneController, decoration: const InputDecoration(hintText: 'Digite seu telefone', border: InputBorder.none), keyboardType: TextInputType.phone, style: const TextStyle(fontSize: 14)), dense: true),
+                    ListTile(
+                      leading: const Icon(Icons.wc, color: Colors.grey),
+                      title: const Text('Sexo'),
+                      subtitle: DropdownButton<String>(
+                        value: _sexoSelecionado,
+                        isExpanded: true,
+                        underline: const SizedBox.shrink(),
+                        items: const [
+                          DropdownMenuItem(value: 'masculino', child: Text('Masculino')),
+                          DropdownMenuItem(value: 'feminino', child: Text('Feminino')),
+                          DropdownMenuItem(value: 'outro', child: Text('Outro')),
+                          DropdownMenuItem(value: 'nao_informado', child: Text('Prefiro não informar')),
+                        ],
+                        onChanged: (value) => setState(() => _sexoSelecionado = value),
+                      ),
+                      dense: true,
+                    ),
                     const SizedBox(height: 16),
                     Center(
                       child: ElevatedButton.icon(

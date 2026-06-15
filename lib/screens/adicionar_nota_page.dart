@@ -26,8 +26,16 @@ class _AdicionarNotaPageState extends State<AdicionarNotaPage> {
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _conteudoController = TextEditingController();
   final DatabaseService _db = DatabaseService();
+  bool _isSaving = false;
 
-  void _salvarNota() {
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _conteudoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _salvarNota() async {
     if (_tituloController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Digite um título'), backgroundColor: Colors.red),
@@ -43,17 +51,26 @@ class _AdicionarNotaPageState extends State<AdicionarNotaPage> {
     }
 
     final nota = Nota(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
       atletaCodigo: widget.atletaCodigo,
       profissionalId: widget.profissionalId,
       profissionalNome: widget.profissionalNome,
       profissionalTipo: widget.profissionalTipo,
       titulo: _tituloController.text.trim(),
       conteudo: _conteudoController.text.trim(),
-      data: DateTime.now(),
     );
 
-    _db.salvarNota(nota);
+    setState(() => _isSaving = true);
+    final notaSalva = await _db.salvarNota(nota);
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (!notaSalva) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao salvar nota'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Nota salva!'), backgroundColor: Colors.green),
     );
@@ -99,12 +116,12 @@ class _AdicionarNotaPageState extends State<AdicionarNotaPage> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: _salvarNota,
+              onPressed: _isSaving ? null : _salvarNota,
               style: ElevatedButton.styleFrom(
                 backgroundColor: cor,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('SALVAR NOTA', style: TextStyle(fontSize: 16)),
+              child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('SALVAR NOTA', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

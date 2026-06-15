@@ -21,11 +21,13 @@ class _DashboardPageState extends State<DashboardPage> {
     _carregarHistorico();
   }
 
-  void _carregarHistorico() {
+  Future<void> _carregarHistorico() async {
     final ativo = _db.getAtivoLogado();
     if (ativo != null) {
+      final historico = await _db.getTreinosDoAtleta(ativo['id']);
+      if (!mounted) return;
       setState(() {
-        _historico = _db.getTreinosDoAtleta(ativo['id']);
+        _historico = historico;
         _isLoading = false;
       });
     } else {
@@ -40,9 +42,10 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  void _sair() {
-    _db.logout();
-    Navigator.popUntil(context, (route) => route.isFirst);
+  Future<void> _sair() async {
+    await _db.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   @override
