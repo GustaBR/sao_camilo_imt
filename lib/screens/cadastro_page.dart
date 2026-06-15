@@ -67,7 +67,7 @@ class _CadastroPageState extends State<CadastroPage> {
           _mostrarSnackbar('Cadastro realizado! Seu código: $codigo', isError: false);
           if (mounted) Navigator.pushReplacementNamed(context, '/login');
         } else {
-          _mostrarSnackbar('Erro ao cadastrar. Tente novamente.');
+          _mostrarSnackbar(_db.ultimoErro ?? 'Erro ao cadastrar. Tente novamente.');
         }
       } else {
         final profissional = await _db.cadastrarProfissional(
@@ -83,7 +83,7 @@ class _CadastroPageState extends State<CadastroPage> {
           _mostrarSnackbar('Cadastro realizado!', isError: false);
           if (mounted) Navigator.pushReplacementNamed(context, '/login');
         } else {
-          _mostrarSnackbar('Erro ao cadastrar. Verifique os dados e tente novamente.');
+          _mostrarSnackbar(_db.ultimoErro ?? 'Erro ao cadastrar. Verifique os dados e tente novamente.');
         }
       }
     }

@@ -17,8 +17,6 @@ class DashboardProfissionalPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ativo = _db.getAtivoLogado();
-
     return Scaffold(
       backgroundColor: const Color(0xFFE0E0E0),
       appBar: AppBar(
@@ -353,6 +351,77 @@ class DashboardProfissionalPage extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String titulo,
+    required String valor,
+    required IconData icone,
+    required Color cor,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icone, color: cor, size: 36),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: const TextStyle(color: Colors.black54)),
+                Text(
+                  valor,
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: cor),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricCard(String titulo, String valor, IconData icone, Color cor) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icone, color: cor),
+            const SizedBox(height: 8),
+            Text(
+              valor,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cor),
+            ),
+            const SizedBox(height: 4),
+            Text(titulo, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
     );
   }
 

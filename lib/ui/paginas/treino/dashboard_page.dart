@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
-import '../../../screens/atleta_perfil_page.dart';
 import 'treino_pre_sessao.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -14,137 +12,46 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DatabaseService _db = DatabaseService();
-  final _supabase = Supabase.instance.client;
-  
   List<SessaoTreino> _historico = [];
   bool _isLoading = true;
-  String? _atletaId;
-  String? _atletaNome;
-  String? _atletaCodigo;
 
   @override
   void initState() {
     super.initState();
-    _carregarDadosDoAuth();
+    _carregarHistorico();
   }
 
-  Future<void> _carregarDadosDoAuth() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      // Pega a sessão atual do Supabase Auth
-      final session = _supabase.auth.currentSession;
-      print('=== SESSÃO SUPABASE ===');
-      print('Session: ${session?.user?.id}');
-      
-      if (session != null) {
-        final userId = session.user!.id;
-        
-        // Busca a pessoa pelo auth_user_id
-        final pessoa = await _supabase
-            .from('pessoas')
-            .select()
-            .eq('auth_user_id', userId)
-            .maybeSingle();
-        
-        print('Pessoa encontrada: $pessoa');
-        
-        if (pessoa != null) {
-          _atletaId = pessoa['id'].toString();
-          _atletaNome = pessoa['nome'].toString();
-          
-          // Busca o código do atleta
-          final atleta = await _supabase
-              .from('atletas')
-              .select('codigo_acesso')
-              .eq('id', _atletaId!)
-              .maybeSingle();
-          
-          if (atleta != null) {
-            _atletaCodigo = atleta['codigo_acesso'].toString();
-            print('Código do atleta: $_atletaCodigo');
-          }
-          
-          // Busca os treinos
-          final treinos = await _db.getTreinosDoAtleta(_atletaId!);
-          _historico = treinos;
-        }
-      }
-    } catch (e) {
-      print('Erro ao carregar dados: $e');
-    }
-    
-    setState(() => _isLoading = false);
-  }
-
-  void _irParaPerfil() {
-    if (_atletaCodigo != null && _atletaNome != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AtletaPerfilPage(
-            codigo: _atletaCodigo!,
-            nome: _atletaNome!,
-          ),
-        ),
-      ).then((_) => _carregarDadosDoAuth());
+  Future<void> _carregarHistorico() async {
+    final ativo = _db.getAtivoLogado();
+    if (ativo != null) {
+      final historico = await _db.getTreinosDoAtleta(ativo['id']);
+      if (!mounted) return;
+      setState(() {
+        _historico = historico;
+        _isLoading = false;
+      });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aguarde, carregando dados...'), backgroundColor: Colors.orange),
-      );
+      setState(() => _isLoading = false);
     }
   }
 
   void _iniciarTreino() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TreinoPreSessao()),
-    );
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const TreinoPreSessao()));
     if (result == true) {
-      _carregarDadosDoAuth();
+      _carregarHistorico();
     }
   }
 
   Future<void> _sair() async {
-    await _supabase.auth.signOut();
+    await _db.logout();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
-  void _confirmarDeletarTreino(SessaoTreino treino) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Deletar Treino'),
-        content: Text('Tem certeza que deseja deletar o treino de ${treino.dataFormatada}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              final deletado = await _db.deletarTreino(treino.id);
-              if (!mounted) return;
-              Navigator.pop(context);
-              if (deletado) {
-                await _carregarDadosDoAuth();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Treino deletado!'), backgroundColor: Colors.green),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro ao deletar treino'), backgroundColor: Colors.red),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Deletar'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final ativo = _db.getAtivoLogado();
+
     return Scaffold(
       backgroundColor: const Color(0xFFE0E0E0),
       appBar: AppBar(
@@ -152,15 +59,19 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: const Color(0xFFB30000),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: _irParaPerfil,
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              if (ativo != null) {
+                Navigator.pushNamed(
+                  context,
+                  '/atleta/perfil',
+                  arguments: {'codigo': ativo['id'].toString(), 'nome': ativo['nome'].toString()},
+                );
+              }
+            },
             tooltip: 'Meu Perfil',
           ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _sair,
-            tooltip: 'Sair',
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _sair, tooltip: 'Sair'),
         ],
       ),
       body: _isLoading
@@ -178,26 +89,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           const Icon(Icons.fitness_center, size: 60, color: Color(0xFFB30000)),
                           const SizedBox(height: 16),
-                          Text(
-                            'Bem-vindo, ${_atletaNome ?? 'Atleta'}!',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
+                          Text('Bem-vindo, ${ativo != null ? ativo['nome'] : 'Atleta'}!', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Registre seus treinos e acompanhe seu desempenho',
-                            style: TextStyle(fontSize: 16, color: Colors.black54),
-                            textAlign: TextAlign.center,
-                          ),
+                          const Text('Registre seus treinos e acompanhe seu desempenho', style: TextStyle(fontSize: 16, color: Colors.black54), textAlign: TextAlign.center),
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: _iniciarTreino,
-                            icon: const Icon(Icons.play_arrow, color: Color(0xFFB30000)),
-                            label: const Text('INICIAR NOVO TREINO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFB30000))),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
+                            icon: const Icon(Icons.play_arrow),
+                            label: const Text('INICIAR NOVO TREINO', style: TextStyle(fontSize: 16)),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                           ),
                         ],
                       ),
@@ -218,11 +118,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(32),
-                                child: Text(
-                                  'Nenhum treino registrado ainda.\nInicie um novo treino!',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey),
-                                ),
+                                child: Text('Nenhum treino registrado ainda.\nInicie um novo treino!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                               ),
                             )
                           else
@@ -235,26 +131,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  child: Column(
+                                  child: ExpansionTile(
+                                    leading: CircleAvatar(backgroundColor: const Color(0xFFB30000).withOpacity(0.1), child: const Icon(Icons.fitness_center, color: Color(0xFFB30000))),
+                                    title: Text('${t.dataFormatada} - ${t.modalidade}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    subtitle: Text('Duração: ${t.duracaoMinutos} min | Borg: ${t.escalaBorg}'),
                                     children: [
-                                      ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor: const Color(0xFFB30000).withOpacity(0.1),
-                                          child: const Icon(Icons.fitness_center, color: Color(0xFFB30000)),
-                                        ),
-                                        title: Text('${t.dataFormatada} - ${t.modalidade}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        subtitle: Text('Duração: ${t.duracaoMinutos} min | Borg: ${t.escalaBorg}'),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                              onPressed: () => _confirmarDeletarTreino(t),
-                                            ),
-                                            const Icon(Icons.chevron_right, color: Colors.grey),
-                                          ],
-                                        ),
-                                      ),
                                       Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: Column(

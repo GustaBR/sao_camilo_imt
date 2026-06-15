@@ -26,6 +26,9 @@ class DatabaseService {
   String? _ativoLogadoTipo;
   String? _ativoLogadoCodigo;
   Map<String, dynamic>? _profissionalLogado;
+  String? _ultimoErro;
+
+  String? get ultimoErro => _ultimoErro;
 
   String get _apiBaseUrl {
     if (_configuredApiBaseUrl.isNotEmpty) return _configuredApiBaseUrl;
@@ -97,32 +100,60 @@ class DatabaseService {
     String path, {
     Map<String, dynamic>? body,
   }) async {
+    _ultimoErro = null;
     final headers = {'Content-Type': 'application/json'};
     late http.Response response;
 
-    switch (method) {
-      case 'GET':
-        response = await http.get(_uri(path), headers: headers);
-        break;
-      case 'POST':
-        response = await http.post(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
-        break;
-      case 'PATCH':
-        response = await http.patch(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
-        break;
-      case 'DELETE':
-        response = await http.delete(_uri(path), headers: headers);
-        break;
-      default:
-        throw ArgumentError('Metodo HTTP nao suportado: $method');
+    try {
+      switch (method) {
+        case 'GET':
+          response = await http.get(_uri(path), headers: headers);
+          break;
+        case 'POST':
+          response = await http.post(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+          break;
+        case 'PATCH':
+          response = await http.patch(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+          break;
+        case 'DELETE':
+          response = await http.delete(_uri(path), headers: headers);
+          break;
+        default:
+          throw ArgumentError('Metodo HTTP nao suportado: $method');
+      }
+    } catch (error) {
+      _ultimoErro =
+          'Nao foi possivel conectar a API em $_apiBaseUrl. Confirme se o backend esta rodando e se a URL esta acessivel pelo dispositivo.';
+      throw Exception(_ultimoErro);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Erro ${response.statusCode}: ${utf8.decode(response.bodyBytes)}');
+      _ultimoErro = _mensagemErroResposta(response);
+      throw Exception('Erro ${response.statusCode}: $_ultimoErro');
     }
 
     if (response.bodyBytes.isEmpty) return null;
     return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+
+  String _mensagemErroResposta(http.Response response) {
+    final rawBody = utf8.decode(response.bodyBytes);
+    if (rawBody.isEmpty) return 'Erro ${response.statusCode} na API.';
+
+    try {
+      final data = jsonDecode(rawBody);
+      if (data is Map<String, dynamic>) {
+        final detail = data['detail'];
+        if (detail is String && detail.trim().isNotEmpty) {
+          return detail;
+        }
+        if (detail != null) return detail.toString();
+      }
+    } catch (_) {
+      // Usa o corpo bruto quando a API nao retorna JSON.
+    }
+
+    return rawBody;
   }
 
   // ========== ATLETAS ==========
@@ -154,6 +185,7 @@ class DatabaseService {
         return data['codigo']?.toString();
       }
     } catch (error) {
+      _ultimoErro ??= error.toString();
       debugPrint('Erro ao cadastrar atleta: $error');
     }
     return null;
@@ -182,6 +214,7 @@ class DatabaseService {
         return data;
       }
     } catch (error) {
+      _ultimoErro ??= error.toString();
       debugPrint('Erro ao cadastrar profissional: $error');
     }
     return null;
