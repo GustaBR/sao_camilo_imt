@@ -1,6 +1,6 @@
 // lib/screens/pages/dashboard_profissional_page.dart
 import 'package:flutter/material.dart';
-import '../models/sessao_treino.dart';
+import '../../models/sessao_treino.dart';
 
 class DashboardProfissionalPage extends StatelessWidget {
   final String tipoProfissional;
@@ -24,7 +24,7 @@ class DashboardProfissionalPage extends StatelessWidget {
         backgroundColor: _getCor(),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.close), // Troquei pra close pra indicar que fecha o dashboard
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -37,7 +37,7 @@ class DashboardProfissionalPage extends StatelessWidget {
     switch (tipoProfissional) {
       case 'medico':
         return 'Visão Médica';
-      case 'instrutor':
+      case 'treinador': // <-- CORRIGIDO AQUI
         return 'Desempenho';
       case 'nutricionista':
         return 'Análise Nutricional';
@@ -50,7 +50,7 @@ class DashboardProfissionalPage extends StatelessWidget {
     switch (tipoProfissional) {
       case 'medico':
         return const Color(0xFFB30000);
-      case 'instrutor':
+      case 'treinador': // <-- CORRIGIDO AQUI
         return Colors.blue;
       case 'nutricionista':
         return Colors.green;
@@ -65,7 +65,7 @@ class DashboardProfissionalPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline, size: 64, color: Colors.grey),
+            const Icon(Icons.info_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             const Text(
               'Nenhum treino registrado ainda',
@@ -84,8 +84,8 @@ class DashboardProfissionalPage extends StatelessWidget {
     switch (tipoProfissional) {
       case 'medico':
         return _buildMedicoDashboard();
-      case 'instrutor':
-        return _buildInstrutorDashboard();
+      case 'treinador': // <-- CORRIGIDO AQUI
+        return _buildTreinadorDashboard();
       case 'nutricionista':
         return _buildNutricionistaDashboard();
       default:
@@ -200,9 +200,9 @@ class DashboardProfissionalPage extends StatelessWidget {
                           _buildDetailRow('Escala de Borg', s.escalaBorg.toString()),
                           _buildDetailRow('Sintomas gastro', s.teveSintomasGastro ? 'Sim' : 'Não'),
                           if (s.teveSintomasGastro)
-                            _buildDetailRow('Descrição gastro', s.sintomasGastroDescricao),
+                            _buildDetailRow('Descrição gastro', s.sintomasGastroDescricao ?? ''),
                           _buildDetailRow('Fadiga', s.teveFadiga ? 'Sim' : 'Não'),
-                          if (s.teveFadiga) _buildDetailRow('Descrição fadiga', s.fadigaDescricao),
+                          if (s.teveFadiga) _buildDetailRow('Descrição fadiga', s.fadigaDescricao ?? ''),
                           _buildDetailRow('Roupas encharcadas', s.roupasEncharcadas ? 'Sim' : 'Não'),
                         ],
                       ),
@@ -217,8 +217,8 @@ class DashboardProfissionalPage extends StatelessWidget {
     );
   }
 
-  // ==================== DASHBOARD INSTRUTOR ====================
-  Widget _buildInstrutorDashboard() {
+  // ==================== DASHBOARD TREINADOR ====================
+  Widget _buildTreinadorDashboard() { // <-- CORRIGIDO NOME DO MÉTODO
     SessaoTreino? ultima = sessoes.isNotEmpty ? sessoes.first : null;
     
     double mediaDuracao = sessoes.fold(0, (sum, s) => sum + s.duracaoRealSegundos) / sessoes.length / 60;
