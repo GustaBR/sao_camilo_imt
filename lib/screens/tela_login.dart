@@ -11,114 +11,134 @@ class TelaLogin extends StatefulWidget {
 }
 
 class _TelaLoginState extends State<TelaLogin> {
-  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final DatabaseService _db = DatabaseService();
-  
   bool _isLoading = false;
+  bool _obscureText = true;
   String? _tipoSelecionado;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final logado = _db.getAtivoLogado();
-      if (logado != null) {
-        _redirecionarPorPerfil(logado);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _senhaController.dispose();
-    super.dispose();
-  }
-
-  void _redirecionarPorPerfil(Map<String, dynamic> dadosUsuario) {
-    final tipo = dadosUsuario['tipo']?.toString();
-    final id = dadosUsuario['id']?.toString() ?? '';
-    final nome = dadosUsuario['nome']?.toString() ?? '';
-
-    if (tipo == 'atleta') {
-      Navigator.pushReplacementNamed(context, '/atleta/treino');
-    } else if (tipo == 'medico') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MedicoListaPage(profissionalId: id, profissionalNome: nome)),
-      );
-    } else if (tipo == 'nutricionista') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => NutricionistaListaPage(profissionalId: id, profissionalNome: nome)),
-      );
-    } else if (tipo == 'treinador') {
-      // Como ainda não temos a tela TreinadorListaPage, vou colocar uma tela provisória.
-      // Quando você criar a tela dele, é só trocar aqui!
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Scaffold(
-            appBar: AppBar(title: const Text('Painel do Treinador')),
-            body: Center(child: Text('Bem-vindo, Treinador $nome!')),
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _fazerLogin() async {
+  void _login() async {
     if (_tipoSelecionado == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Selecione seu perfil antes de entrar."), backgroundColor: Colors.red),
-      );
+      _mostrarSnackbar('Selecione o tipo de usuário');
       return;
     }
 
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      
-      try {
-        Map<String, dynamic>? usuario;
-        String email = _emailController.text.trim();
-        String senha = _senhaController.text;
+    String email = _emailController.text.trim();
+    String senha = _senhaController.text;
 
-        if (_tipoSelecionado == 'atleta') {
-          usuario = await _db.autenticarAtleta(email, senha);
-        } else if (_tipoSelecionado == 'medico') {
-          usuario = await _db.autenticarMedico(email, senha);
-        } else if (_tipoSelecionado == 'nutricionista') {
-          usuario = await _db.autenticarNutricionista(email, senha);
-        } else if (_tipoSelecionado == 'treinador') {
-          usuario = await _db.autenticarTreinador(email, senha); // <-- Agora chama o método certo!
-        }
+    if (email.isEmpty || senha.isEmpty) {
+      _mostrarSnackbar('Preencha e-mail e senha');
+      return;
+    }
 
-        if (!mounted) return;
+    setState(() => _isLoading = true);
 
-        if (usuario != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Login efetuado com sucesso!"), backgroundColor: Colors.green),
-          ); 
-          
-          _redirecionarPorPerfil(usuario);
-
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Erro: E-mail ou senha incorretos."), backgroundColor: Colors.red),
-          );
-        }
-      } catch (erro) {
+    if (_tipoSelecionado == 'atleta') {
+      var atleta = await _db.autenticarAtleta(email, senha);
+      if (!mounted) return;
+      if (atleta != null) {
+        setState(() => _isLoading = false);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erro inesperado: $erro"), backgroundColor: Colors.red),
+          Navigator.pushReplacementNamed(context, '/atleta/treino');
+        }
+      } else {
+        setState(() => _isLoading = false);
+        _mostrarSnackbar('E-mail ou senha inválidos');
+      }
+    } else if (_tipoSelecionado == 'medico') {
+      var medico = await _db.autenticarMedico(email, senha);
+      if (!mounted) return;
+      if (medico != null) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MedicoListaPage(profissionalId: medico['id'], profissionalNome: medico['nome'])),
           );
         }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
+      } else {
+        setState(() => _isLoading = false);
+        _mostrarSnackbar('E-mail ou senha inválidos');
+      }
+    } else if (_tipoSelecionado == 'nutricionista') {
+      var nutri = await _db.autenticarNutricionista(email, senha);
+      if (!mounted) return;
+      if (nutri != null) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => NutricionistaListaPage(profissionalId: nutri['id'], profissionalNome: nutri['nome'])),
+          );
+        }
+      } else {
+        setState(() => _isLoading = false);
+        _mostrarSnackbar('E-mail ou senha inválidos');
       }
     }
+  }
+
+  void _mostrarSnackbar(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem), backgroundColor: Colors.red));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login'), backgroundColor: const Color(0xFFB30000)),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_outline, size: 80, color: Color(0xFFB30000)),
+            const SizedBox(height: 24),
+            const Text('Bem-vindo!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 32),
+            const Text('Entrar como:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildTipoBotao('ATLETA', Icons.person, const Color(0xFFB30000), 'atleta'),
+                const SizedBox(width: 12),
+                _buildTipoBotao('MÉDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
+                const SizedBox(width: 12),
+                _buildTipoBotao('NUTRI', Icons.restaurant, Colors.green, 'nutricionista'),
+              ],
+            ),
+            const SizedBox(height: 32),
+            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)), keyboardType: TextInputType.emailAddress),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _senhaController,
+              obscureText: _obscureText,
+              decoration: InputDecoration(
+                labelText: 'Senha',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _obscureText = !_obscureText)),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000)),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('ENTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.pushReplacementNamed(context, '/cadastro'),
+              child: const Text('Não tem conta? Cadastre-se'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildTipoBotao(String titulo, IconData icon, Color cor, String tipo) {
@@ -127,123 +147,18 @@ class _TelaLoginState extends State<TelaLogin> {
       child: GestureDetector(
         onTap: () => setState(() => _tipoSelecionado = tipo),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: selecionado ? cor.withOpacity(0.1) : Colors.grey[100],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: selecionado ? cor : Colors.transparent, width: 2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: selecionado ? cor : Colors.grey[300]!, width: selecionado ? 2 : 1),
           ),
           child: Column(
             children: [
-              Icon(icon, color: selecionado ? cor : Colors.grey, size: 20),
+              Icon(icon, color: selecionado ? cor : Colors.grey, size: 24),
               const SizedBox(height: 4),
-              Text(titulo, style: TextStyle(color: selecionado ? cor : Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(titulo, style: TextStyle(color: selecionado ? cor : Colors.grey, fontSize: 11)),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFB30000),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFB30000),
-        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-        elevation: 0,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            padding: const EdgeInsets.all(32.0),
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/images/logo.png', height: 60),
-                  const SizedBox(height: 30),
-                  
-                  // Primeira linha de botões
-                  Row(
-                    children: [
-                      _buildTipoBotao('ATLETA', Icons.person, const Color(0xFFB30000), 'atleta'),
-                      const SizedBox(width: 8),
-                      _buildTipoBotao('MÉDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Segunda linha de botões
-                  Row(
-                    children: [
-                      _buildTipoBotao('NUTRI', Icons.restaurant, Colors.green, 'nutricionista'),
-                      const SizedBox(width: 8),
-                      _buildTipoBotao('TREINADOR', Icons.sports, Colors.blue, 'treinador'),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'E-mail',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Por favor, insira o e-mail';
-                      if (!value.contains('@')) return 'Insira um e-mail válido';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _senhaController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Senha',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Por favor, insira a senha';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _fazerLogin,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        backgroundColor: const Color(0xFFB30000),
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _isLoading 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('ENTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),

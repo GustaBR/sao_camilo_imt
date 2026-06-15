@@ -1,31 +1,25 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/nota.dart';
 import '../models/sessao_treino.dart';
 
+const String _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
 const String _sessionStorageKey = 'nutri_esportiva_sessao';
+
+String _defaultApiBaseUrl() {
+  if (kIsWeb) return 'http://localhost:8000';
+  if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8000';
+  return 'http://localhost:8000';
+}
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
-
-  // ========== DELETAR TREINO ==========
-Future<bool> deletarTreino(String treinoId) async {
-  try {
-    await _supabase.from('treinos').delete().eq('id', treinoId);
-    return true;
-  } catch (error) {
-    debugPrint('Erro ao deletar treino: $error');
-    return false;
-  }
-}
-
-  // Cliente oficial do Supabase
-  final _supabase = Supabase.instance.client;
 
   String? _ativoLogadoId;
   String? _ativoLogadoNome;
@@ -33,7 +27,13 @@ Future<bool> deletarTreino(String treinoId) async {
   String? _ativoLogadoCodigo;
   Map<String, dynamic>? _profissionalLogado;
 
-  // ========== SESSÃO LOCAL ==========
+  String get _apiBaseUrl {
+    if (_configuredApiBaseUrl.isNotEmpty) return _configuredApiBaseUrl;
+    return _defaultApiBaseUrl();
+  }
+
+  Uri _uri(String path) => Uri.parse('$_apiBaseUrl$path');
+
   Future<void> carregarSessaoSalva() async {
     final prefs = await SharedPreferences.getInstance();
     final rawSession = prefs.getString(_sessionStorageKey);
@@ -92,6 +92,39 @@ Future<bool> deletarTreino(String treinoId) async {
     await prefs.remove(_sessionStorageKey);
   }
 
+  Future<dynamic> _request(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final headers = {'Content-Type': 'application/json'};
+    late http.Response response;
+
+    switch (method) {
+      case 'GET':
+        response = await http.get(_uri(path), headers: headers);
+        break;
+      case 'POST':
+        response = await http.post(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+        break;
+      case 'PATCH':
+        response = await http.patch(_uri(path), headers: headers, body: jsonEncode(body ?? {}));
+        break;
+      case 'DELETE':
+        response = await http.delete(_uri(path), headers: headers);
+        break;
+      default:
+        throw ArgumentError('Metodo HTTP nao suportado: $method');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Erro ${response.statusCode}: ${utf8.decode(response.bodyBytes)}');
+    }
+
+    if (response.bodyBytes.isEmpty) return null;
+    return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+
   // ========== ATLETAS ==========
   Future<String?> cadastrarAtleta(
     String nome,
@@ -103,38 +136,29 @@ Future<bool> deletarTreino(String treinoId) async {
     required String sexo,
   }) async {
     try {
-      // 1. Cria usuário no Auth do Supabase
-      final authResponse = await _supabase.auth.signUp(email: email, password: senha);
-      if (authResponse.user == null) return null;
-
-      final authId = authResponse.user!.id;
       final alturaBanco = altura > 3 ? altura / 100 : altura;
-
-      // 2. Insere na tabela pessoas
-      final pessoaData = await _supabase.from('pessoas').insert({
-        'nome': nome,
-        'email': email,
-        'auth_user_id': authId,
-      }).select().single();
-
-      // 3. Insere na tabela atletas
-      final atletaData = await _supabase.from('atletas').insert({
-        'id': pessoaData['id'],
-        'altura': alturaBanco,
-        'peso': peso,
-        'data_nasc': dataNascimento,
-        'sexo': sexo,
-      }).select().single();
-
-      // RETORNA O ID PARA NÃO DAR ERRO DE NULO
-      return atletaData['id']?.toString(); 
+      final data = await _request(
+        'POST',
+        '/atletas',
+        body: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'dataNascimento': dataNascimento,
+          'altura': alturaBanco,
+          'peso': peso,
+          'sexo': sexo,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        return data['codigo']?.toString();
+      }
     } catch (error) {
-      // JOGA O ERRO PRA TELA
-      throw 'Erro Atleta: $error';
+      debugPrint('Erro ao cadastrar atleta: $error');
     }
+    return null;
   }
 
-  // ========== PROFISSIONAIS ==========
   Future<Map<String, dynamic>?> cadastrarProfissional(
     String nome,
     String email,
@@ -143,70 +167,40 @@ Future<bool> deletarTreino(String treinoId) async {
     String registro,
   ) async {
     try {
-      // 1. Cria usuário no Auth do Supabase
-      final authResponse = await _supabase.auth.signUp(email: email, password: senha);
-      if (authResponse.user == null) return null;
-
-      final authId = authResponse.user!.id;
-
-      // 2. Insere na tabela base 'pessoas'
-      final pessoaData = await _supabase.from('pessoas').insert({
-        'nome': nome,
-        'email': email,
-        'auth_user_id': authId,
-      }).select().single();
-
-      final pessoaId = pessoaData['id'];
-      Map<String, dynamic> profissionalData;
-
-      // 3. Insere na tabela específica dependendo do tipo
-        if (tipo == 'medico') {
-        profissionalData = await _supabase.from('medicos').insert({
-          'id': pessoaId,
-          'crm': registro, 
-        }).select().single();
-      } else if (tipo == 'nutricionista') {
-        profissionalData = await _supabase.from('nutricionistas').insert({
-          'id': pessoaId,
-          'crn': registro, 
-        }).select().single();
-      } else if (tipo == 'treinador') { 
-        profissionalData = await _supabase.from('treinadores').insert({
-          'id': pessoaId,
-        }).select().single();
-      } else {
-        throw Exception('Tipo de profissional desconhecido: $tipo');
+      final data = await _request(
+        'POST',
+        '/profissionais',
+        body: {
+          'nome': nome,
+          'email': email,
+          'senha': senha,
+          'tipo': tipo,
+          'registro': registro,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        return data;
       }
-
-      // Retorna os dados combinados
-      return {
-        ...pessoaData,
-        ...profissionalData,
-        'tipo': tipo,
-      };
     } catch (error) {
-      // JOGA O ERRO PRA TELA
-      throw 'Erro Profissional: $error';
+      debugPrint('Erro ao cadastrar profissional: $error');
     }
+    return null;
   }
 
   Future<Map<String, dynamic>?> getAtleta(String codigo) async {
     try {
-      final data = await _supabase
-          .from('atletas')
-          .select('*, pessoas(nome, email)')
-          .eq('codigo_acesso', codigo)
-          .single();
-
-      final altura = data['altura'];
-      if (altura is num) {
-        data['altura'] = (altura * 100).round();
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(codigo)}');
+      if (data is Map<String, dynamic>) {
+        final altura = data['altura'];
+        if (altura is num) {
+          data['altura'] = (altura * 100).round();
+        }
+        return data;
       }
-      return data;
     } catch (error) {
       debugPrint('Erro ao buscar atleta: $error');
-      return null;
     }
+    return null;
   }
 
   Future<bool> validarCodigoAtleta(String codigo) async {
@@ -214,62 +208,44 @@ Future<bool> deletarTreino(String treinoId) async {
     return atleta != null;
   }
 
-  // ========== AUTENTICAÇÃO ==========
-  Future<Map<String, dynamic>?> autenticarAtleta(String email, String senha) => _autenticar(email, senha, 'atleta');
-  Future<Map<String, dynamic>?> autenticarMedico(String email, String senha) => _autenticar(email, senha, 'medico');
-  Future<Map<String, dynamic>?> autenticarNutricionista(String email, String senha) => _autenticar(email, senha, 'nutricionista');
-  Future<Map<String, dynamic>?> autenticarTreinador(String email, String senha) => _autenticar(email, senha, 'treinador');
+  Future<Map<String, dynamic>?> autenticarAtleta(String email, String senha) {
+    return _autenticar(email, senha, 'atleta');
+  }
+
+  Future<Map<String, dynamic>?> autenticarMedico(String email, String senha) {
+    return _autenticar(email, senha, 'medico');
+  }
+
+  Future<Map<String, dynamic>?> autenticarNutricionista(String email, String senha) {
+    return _autenticar(email, senha, 'nutricionista');
+  }
 
   Future<Map<String, dynamic>?> _autenticar(String email, String senha, String tipo) async {
     try {
-      // Faz login no Supabase Auth
-      final authResponse = await _supabase.auth.signInWithPassword(email: email, password: senha);
-      if (authResponse.user == null) return null;
-
-      // Busca a pessoa atrelada a este usuário logado
-      final pessoa = await _supabase
-          .from('pessoas')
-          .select()
-          .eq('auth_user_id', authResponse.user!.id)
-          .single();
-
-      // Dependendo do tipo, busca os dados específicos
-      Map<String, dynamic> usuarioFinal = {
-        'id': pessoa['id'],
-        'nome': pessoa['nome'],
-        'email': pessoa['email'],
-        'tipo': tipo,
-      };
-
-      if (tipo == 'atleta') {
-        final atleta = await _supabase.from('atletas').select().eq('id', pessoa['id']).single();
-        usuarioFinal['codigo'] = atleta['codigo_acesso'];
-        usuarioFinal.addAll(atleta);
-      } else if (tipo == 'medico') {
-        final medico = await _supabase.from('medicos').select().eq('id', pessoa['id']).single();
-        usuarioFinal.addAll(medico);
-      } else if (tipo == 'nutricionista') {
-        final nutri = await _supabase.from('nutricionistas').select().eq('id', pessoa['id']).single();
-        usuarioFinal.addAll(nutri);
-      } else if (tipo == 'treinador') { 
-        final treinador = await _supabase.from('treinadores').select().eq('id', pessoa['id']).single();
-        usuarioFinal.addAll(treinador);
+      final data = await _request(
+        'POST',
+        '/auth/login',
+        body: {'email': email, 'senha': senha, 'tipo': tipo},
+      );
+      if (data is Map<String, dynamic>) {
+        _ativoLogadoId = tipo == 'atleta'
+            ? data['codigo']?.toString() ?? data['id']?.toString()
+            : data['id']?.toString();
+        _ativoLogadoNome = data['nome']?.toString();
+        _ativoLogadoTipo = data['tipo']?.toString();
+        _ativoLogadoCodigo = data['codigo']?.toString();
+        if (tipo != 'atleta') {
+          _profissionalLogado = data;
+        } else {
+          _profissionalLogado = null;
+        }
+        await _salvarSessaoAtual();
+        return data;
       }
-
-      // Salva sessão local 
-      _ativoLogadoId = tipo == 'atleta' ? usuarioFinal['codigo']?.toString() : usuarioFinal['id']?.toString();
-      _ativoLogadoNome = usuarioFinal['nome']?.toString();
-      _ativoLogadoTipo = tipo;
-      _ativoLogadoCodigo = usuarioFinal['codigo']?.toString();
-      _profissionalLogado = tipo != 'atleta' ? usuarioFinal : null;
-      
-      await _salvarSessaoAtual();
-      
-      return usuarioFinal;
     } catch (error) {
-      // JOGA O ERRO PRA TELA
-      throw 'Erro Login Automático: $error';
+      debugPrint('Erro ao autenticar $tipo: $error');
     }
+    return null;
   }
 
   Future<Map<String, dynamic>?> atualizarDadosAtleta(
@@ -281,62 +257,62 @@ Future<bool> deletarTreino(String treinoId) async {
   }) async {
     try {
       final alturaBanco = altura != null && altura > 3 ? altura / 100 : altura;
-      
-      final updateData = <String, dynamic>{};
-      if (peso != null) updateData['peso'] = peso;
-      if (alturaBanco != null) updateData['altura'] = alturaBanco;
-      if (dataNascimento != null) updateData['data_nasc'] = dataNascimento;
-      if (sexo != null) updateData['sexo'] = sexo;
-
-      final data = await _supabase
-          .from('atletas')
-          .update(updateData)
-          .eq('codigo_acesso', codigo)
-          .select()
-          .single();
-
-      final alturaAtualizada = data['altura'];
-      if (alturaAtualizada is num) {
-        data['altura'] = (alturaAtualizada * 100).round();
+      final data = await _request(
+        'PATCH',
+        '/atletas/${Uri.encodeComponent(codigo)}',
+        body: {
+          'peso': peso,
+          'altura': alturaBanco,
+          'dataNascimento': dataNascimento,
+          'sexo': sexo,
+        },
+      );
+      if (data is Map<String, dynamic>) {
+        final altura = data['altura'];
+        if (altura is num) {
+          data['altura'] = (altura * 100).round();
+        }
+        return data;
       }
-      return data;
     } catch (error) {
       debugPrint('Erro ao atualizar atleta: $error');
-      return null;
     }
+    return null;
   }
 
-  // ========== TREINOS ==========
-Future<bool> salvarTreino(SessaoTreino treino) async {
-  try {
-    final resultado = await _supabase.from('treinos').insert(treino.toJson());
-    print('Treino salvo com sucesso: $resultado');
-    return true;
-  } catch (error) {
-    print('Erro ao salvar treino: $error');
-    return false;
+  Future<bool> salvarTreino(SessaoTreino treino) async {
+    try {
+      await _request('POST', '/treinos', body: treino.toJson());
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao salvar treino: $error');
+      return false;
+    }
   }
-}
 
   Future<List<SessaoTreino>> getTreinosDoAtleta(String atletaId) async {
     try {
-      final data = await _supabase
-          .from('treinos')
-          .select()
-          .eq('atletas_id', atletaId)
-          .order('data_hora', ascending: false);
-
-      return data.map((json) => SessaoTreino.fromJson(json)).toList();
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(atletaId)}/treinos');
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(SessaoTreino.fromJson)
+            .toList();
+      }
     } catch (error) {
       debugPrint('Erro ao buscar treinos: $error');
-      return [];
     }
+    return [];
   }
 
   // ========== NOTAS ==========
   Future<bool> salvarNota(Nota nota) async {
     try {
-      await _supabase.from('notas_atletas').insert(nota.toJson());
+      await _request(
+        'POST',
+        '/atletas/${Uri.encodeComponent(nota.atletaCodigo)}/notas',
+        body: nota.toJson(),
+      );
       return true;
     } catch (error) {
       debugPrint('Erro ao salvar nota: $error');
@@ -346,23 +322,27 @@ Future<bool> salvarTreino(SessaoTreino treino) async {
 
   Future<List<Nota>> getNotasDoAtleta(String atletaCodigo) async {
     try {
-      final atleta = await getAtleta(atletaCodigo);
-      if (atleta == null) return [];
-
-      final data = await _supabase
-          .from('notas_atletas')
-          .select()
-          .eq('atletas_id', atleta['id'])
-          .order('criado_em', ascending: false);
-
-      return data.map((json) => Nota.fromJson(json)).toList();
+      final data = await _request('GET', '/atletas/${Uri.encodeComponent(atletaCodigo)}/notas');
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(Nota.fromJson)
+            .toList();
+      }
     } catch (error) {
       debugPrint('Erro ao buscar notas: $error');
-      return [];
     }
+    return [];
   }
 
-  // ========== GETTERS & LOGOUT ==========
+  // ========== PROFISSIONAIS ==========
+  Future<bool> autenticarProfissional(String usuario, String senha) async {
+    final medico = await autenticarMedico(usuario, senha);
+    if (medico != null) return true;
+    final nutricionista = await autenticarNutricionista(usuario, senha);
+    return nutricionista != null;
+  }
+
   Map<String, dynamic>? getProfissional(String usuario) {
     if (_profissionalLogado?['id']?.toString() == usuario) {
       return _profissionalLogado;
@@ -380,11 +360,11 @@ Future<bool> salvarTreino(SessaoTreino treino) async {
     };
   }
 
-  Map<String, dynamic>? getProfissionalLogado() => _profissionalLogado;
+  Map<String, dynamic>? getProfissionalLogado() {
+    return _profissionalLogado;
+  }
 
   Future<void> logout() async {
-    await _supabase.auth.signOut();
-    
     _ativoLogadoId = null;
     _ativoLogadoNome = null;
     _ativoLogadoTipo = null;
@@ -393,61 +373,55 @@ Future<bool> salvarTreino(SessaoTreino treino) async {
     await _limparSessaoSalva();
   }
 
-  Future<void> logoutProfissional() => logout();
-
-  // ========== RELACIONAMENTOS N-N ==========
   Future<List<Map<String, dynamic>>> getAtletasDoProfissional(String profissionalId) async {
     try {
-      final tipoTabela = _ativoLogadoTipo == 'medico' ? 'medicos_atletas' : 'nutricionistas_atletas';
-      final colunaProfissional = _ativoLogadoTipo == 'medico' ? 'medicos_id' : 'nutricionistas_id';
-
-      final data = await _supabase
-          .from(tipoTabela)
-          .select('atletas(*, pessoas(nome, email))')
-          .eq(colunaProfissional, profissionalId);
-
-      return data.map<Map<String, dynamic>>((e) => e['atletas'] as Map<String, dynamic>).toList();
+      final data = await _request(
+        'GET',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas',
+      );
+      if (data is List) {
+        return data.whereType<Map<String, dynamic>>().toList();
+      }
     } catch (error) {
       debugPrint('Erro ao buscar atletas do profissional: $error');
-      return [];
     }
+    return [];
   }
 
   Future<bool> adicionarAtletaAoProfissional(String profissionalId, String codigoAtleta) async {
     try {
-      final atleta = await getAtleta(codigoAtleta);
-      if (atleta == null) return false;
-
-      final tipoTabela = _ativoLogadoTipo == 'medico' ? 'medicos_atletas' : 'nutricionistas_atletas';
-      final colunaProfissional = _ativoLogadoTipo == 'medico' ? 'medicos_id' : 'nutricionistas_id';
-
-      await _supabase.from(tipoTabela).insert({
-        colunaProfissional: profissionalId,
-        'atletas_id': atleta['id'],
-      });
+      final data = await _request(
+        'POST',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas',
+        body: {'codigo': codigoAtleta},
+      );
+      if (data is Map<String, dynamic>) {
+        return data['ok'] == true;
+      }
       return true;
     } catch (error) {
-      debugPrint('Erro ao adicionar atleta: $error');
+      debugPrint('Erro ao adicionar atleta ao profissional: $error');
       return false;
     }
   }
 
   Future<bool> removerAtletaDoProfissional(String profissionalId, String atletaCodigo) async {
     try {
-      final atleta = await getAtleta(atletaCodigo);
-      if (atleta == null) return false;
-
-      final tipoTabela = _ativoLogadoTipo == 'medico' ? 'medicos_atletas' : 'nutricionistas_atletas';
-      final colunaProfissional = _ativoLogadoTipo == 'medico' ? 'medicos_id' : 'nutricionistas_id';
-
-      await _supabase.from(tipoTabela)
-          .delete()
-          .eq(colunaProfissional, profissionalId)
-          .eq('atletas_id', atleta['id']);
+      final data = await _request(
+        'DELETE',
+        '/profissionais/${Uri.encodeComponent(profissionalId)}/atletas/${Uri.encodeComponent(atletaCodigo)}',
+      );
+      if (data is Map<String, dynamic>) {
+        return data['ok'] == true;
+      }
       return true;
     } catch (error) {
-      debugPrint('Erro ao remover atleta: $error');
+      debugPrint('Erro ao remover atleta do profissional: $error');
       return false;
     }
+  }
+
+  Future<void> logoutProfissional() {
+    return logout();
   }
 }

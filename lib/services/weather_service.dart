@@ -1,7 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+
+const String _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+String get _apiBaseUrl {
+  if (_configuredApiBaseUrl.isNotEmpty) {
+    return _configuredApiBaseUrl;
+  }
+
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
+}
 
 class WeatherException implements Exception {
   const WeatherException(this.message);
@@ -32,63 +52,66 @@ class WeatherData {
   final String? exposicaoSolarCodigo;
   final double latitude;
   final double longitude;
+
+  factory WeatherData.fromJson(Map<String, dynamic> json) {
+    final temperatura = _asDouble(json['temperatura']);
+    if (temperatura == null) {
+      throw const WeatherException('A API de clima nao retornou temperatura.');
+    }
+    return WeatherData(
+      temperatura: temperatura,
+      umidade: _asDouble(json['umidade']),
+      sensacaoTermica: _asDouble(json['sensacao_termica']),
+      ventoVelocidade: _asDouble(json['vento_velocidade']),
+      ventoDirecao: _asDouble(json['vento_direcao']),
+      vento: json['vento']?.toString() ?? 'Nao informado',
+      exposicaoSolarCodigo: json['exposicao_solar_codigo']?.toString(),
+      latitude: _asDouble(json['latitude']) ?? 0,
+      longitude: _asDouble(json['longitude']) ?? 0,
+    );
+  }
 }
 
 class WeatherService {
   const WeatherService();
 
   Future<WeatherData> buscarClimaAtual() async {
-    // 1. Pega a localização atual do celular do atleta
     final position = await _buscarLocalizacaoAtual();
-    
-    // 2. Chama a API gratuita da Open-Meteo diretamente
-    final uri = Uri.parse(
-      'https://api.open-meteo.com/v1/forecast?'
-      'latitude=${position.latitude}&'
-      'longitude=${position.longitude}&'
-      'current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code'
+    final uri = Uri.parse('$_apiBaseUrl/weather/current').replace(
+      queryParameters: {
+        'latitude': position.latitude.toString(),
+        'longitude': position.longitude.toString(),
+      },
     );
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 12));
-      
       if (response.statusCode != 200) {
-        throw WeatherException('Não foi possível buscar o clima. Código ${response.statusCode}.');
+        throw WeatherException('Nao foi possivel buscar o clima. Codigo ${response.statusCode}.');
       }
-      
       final data = jsonDecode(response.body);
-      final current = data['current'];
-
-      if (current == null) {
-        throw const WeatherException('A API de clima não retornou os dados atuais.');
+      if (data is! Map<String, dynamic>) {
+        throw const WeatherException('Resposta de clima em formato invalido.');
       }
-
-      // 3. Monta o objeto com os dados recebidos do satélite
-      return WeatherData(
-        temperatura: _asDouble(current['temperature_2m']) ?? 0.0,
-        umidade: _asDouble(current['relative_humidity_2m']),
-        sensacaoTermica: _asDouble(current['apparent_temperature']),
-        ventoVelocidade: _asDouble(current['wind_speed_10m']),
-        ventoDirecao: _asDouble(current['wind_direction_10m']),
-        vento: '${current['wind_speed_10m']} km/h',
-        exposicaoSolarCodigo: current['weather_code']?.toString(),
-        latitude: position.latitude,
-        longitude: position.longitude,
+      return WeatherData.fromJson(data);
+    } on http.ClientException {
+      throw WeatherException(
+        'Nao consegui conectar a API local em $_apiBaseUrl. '
+        'Inicie o backend FastAPI antes de abrir esta tela.',
       );
-
     } on TimeoutException catch (error) {
       throw WeatherException('A consulta de clima demorou demais: $error');
     } on WeatherException {
       rethrow;
     } catch (error) {
-      throw WeatherException('Erro ao buscar dados climáticos: $error');
+      throw WeatherException('Erro ao buscar dados climaticos: $error');
     }
   }
 
   Future<Position> _buscarLocalizacaoAtual() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw const WeatherException('Ative a localização do dispositivo para preencher o clima.');
+      throw const WeatherException('Ative a localizacao do dispositivo para preencher o clima.');
     }
 
     var permission = await Geolocator.checkPermission();
@@ -97,11 +120,11 @@ class WeatherService {
     }
 
     if (permission == LocationPermission.denied) {
-      throw const WeatherException('Permita o acesso à localização para preencher o clima.');
+      throw const WeatherException('Permita o acesso a localizacao para preencher o clima.');
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw const WeatherException('A permissão de localização foi bloqueada nas configurações.');
+      throw const WeatherException('A permissao de localizacao foi bloqueada nas configuracoes.');
     }
 
     return Geolocator.getCurrentPosition(
@@ -113,7 +136,6 @@ class WeatherService {
   }
 }
 
-// Função auxiliar para garantir que os números venham certinhos
 double? _asDouble(Object? value) {
   if (value == null) return null;
   if (value is num) return value.toDouble();

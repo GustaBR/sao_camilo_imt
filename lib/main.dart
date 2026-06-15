@@ -7,14 +7,10 @@ import 'screens/medico_lista_page.dart';
 import 'screens/nutricionista_lista_page.dart';
 import 'ui/paginas/treino/dashboard_page.dart';
 import 'services/database_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://kmvqcogjcwkspejfwvko.supabase.co',
-    anonKey: 'sb_publishable_7MYZxoaWKmJwof-YFzvdJA_R6BeBHTF',
-  );
+  await DatabaseService().carregarSessaoSalva();
   runApp(const MyApp());
 }
 
