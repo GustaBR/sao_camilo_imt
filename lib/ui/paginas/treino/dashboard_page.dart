@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/csv_service.dart';
 import '../../../services/database_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../models/sessao_treino.dart';
@@ -63,6 +64,28 @@ class _DashboardPageState extends State<DashboardPage> {
     await PdfService.gerarHistoricoPdf(_historico, _atletaNome ?? 'Atleta');
   }
 
+  Future<void> _exportarCsv(List<SessaoTreino> treinos) async {
+    if (treinos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum treino para exportar'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    try {
+      await CsvService.gerarHistoricoCsv(treinos, _atletaNome ?? 'Atleta');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('CSV gerado com sucesso'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao gerar CSV: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Future<void> _exportarTreinoIndividual(SessaoTreino treino) async {
     await PdfService.gerarTreinoIndividualPdf(treino, _atletaNome ?? 'Atleta');
   }
@@ -94,7 +117,10 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao deletar treino'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(_db.ultimoErro ?? 'Erro ao deletar treino'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -115,6 +141,11 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
             onPressed: _exportarPdf,
             tooltip: 'Exportar todos os treinos',
+          ),
+          IconButton(
+            icon: const Icon(Icons.table_chart, color: Colors.white),
+            onPressed: () => _exportarCsv(historicoFiltrado),
+            tooltip: 'Exportar CSV',
           ),
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),

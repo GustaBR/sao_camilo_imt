@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/csv_service.dart';
 import '../services/database_service.dart';
 import '../services/pdf_service.dart';
 import '../models/sessao_treino.dart';
@@ -34,10 +35,42 @@ class _TreinadorDetalhesPageState extends State<TreinadorDetalhesPage> {
     await PdfService.gerarTreinoIndividualPdf(treino, widget.atletaNome);
   }
 
+  Future<void> _exportarCsv(List<SessaoTreino> treinos) async {
+    if (treinos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum treino para exportar'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    try {
+      await CsvService.gerarHistoricoCsv(treinos, widget.atletaNome);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('CSV gerado com sucesso'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao gerar CSV: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.atletaNome), backgroundColor: const Color(0xFFB30000)),
+      appBar: AppBar(
+        title: Text(widget.atletaNome),
+        backgroundColor: const Color(0xFFB30000),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.table_chart, color: Colors.white),
+            onPressed: () => _exportarCsv(_treinos),
+            tooltip: 'Exportar CSV',
+          ),
+        ],
+      ),
       body: _treinos.isEmpty
           ? const Center(child: Text('Nenhum treino registrado ainda'))
           : ListView.builder(

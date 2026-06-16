@@ -1061,3 +1061,22 @@ def criar_treino(payload: TreinoCreateRequest, db: Session = Depends(get_db)):
     treino = dict(row)
     treino["atleta_nome"] = atleta["nome"]
     return _treino_response(treino)
+
+
+@router.delete("/treinos/{treino_id}")
+def deletar_treino(treino_id: int, db: Session = Depends(get_db)):
+    result = db.execute(
+        text(
+            f"""
+            delete from {SCHEMA}.treinos
+            where id = :treino_id
+            """
+        ),
+        {"treino_id": treino_id},
+    )
+    db.commit()
+
+    if (result.rowcount or 0) == 0:
+        raise HTTPException(status_code=404, detail="Treino nao encontrado.")
+
+    return {"ok": True}
