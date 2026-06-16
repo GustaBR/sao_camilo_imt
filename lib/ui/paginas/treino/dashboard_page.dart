@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
+import '../../../widgets/treino_date_filter.dart';
 import 'treino_pre_sessao.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -13,6 +14,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final DatabaseService _db = DatabaseService();
   List<SessaoTreino> _historico = [];
+  DateTimeRange? _periodoFiltro;
   bool _isLoading = true;
 
   @override
@@ -51,6 +53,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final ativo = _db.getAtivoLogado();
+    final historicoFiltrado = filtrarTreinosPorPeriodo(_historico, _periodoFiltro);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE0E0E0),
@@ -121,13 +124,29 @@ class _DashboardPageState extends State<DashboardPage> {
                                 child: Text('Nenhum treino registrado ainda.\nInicie um novo treino!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                               ),
                             )
-                          else
+                          else ...[
+                            TreinoDateFilter(
+                              periodo: _periodoFiltro,
+                              onChanged: (periodo) => setState(() => _periodoFiltro = periodo),
+                              cor: const Color(0xFFB30000),
+                              total: _historico.length,
+                              filtrados: historicoFiltrado.length,
+                            ),
+                            const SizedBox(height: 12),
+                            if (historicoFiltrado.isEmpty)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(32),
+                                  child: Text('Nenhum treino encontrado nesse periodo.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                                ),
+                              )
+                            else
                             ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _historico.length,
+                              itemCount: historicoFiltrado.length,
                               itemBuilder: (context, index) {
-                                final t = _historico[index];
+                                final t = historicoFiltrado[index];
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -166,6 +185,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 );
                               },
                             ),
+                          ],
                         ],
                       ),
                     ),

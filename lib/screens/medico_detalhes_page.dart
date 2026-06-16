@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 import '../models/sessao_treino.dart';
+import '../widgets/treino_date_filter.dart';
 
 class MedicoDetalhesPage extends StatefulWidget {
   final String atletaCodigo;
@@ -14,6 +15,7 @@ class MedicoDetalhesPage extends StatefulWidget {
 class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
   final DatabaseService _db = DatabaseService();
   List<SessaoTreino> _treinos = [];
+  DateTimeRange? _periodoFiltro;
 
   @override
   void initState() {
@@ -31,15 +33,32 @@ class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final treinosFiltrados = filtrarTreinosPorPeriodo(_treinos, _periodoFiltro);
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.atletaNome), backgroundColor: const Color(0xFFB30000)),
       body: _treinos.isEmpty
           ? const Center(child: Text('Nenhum treino registrado ainda'))
-          : ListView.builder(
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: TreinoDateFilter(
+                    periodo: _periodoFiltro,
+                    onChanged: (periodo) => setState(() => _periodoFiltro = periodo),
+                    cor: const Color(0xFFB30000),
+                    total: _treinos.length,
+                    filtrados: treinosFiltrados.length,
+                  ),
+                ),
+                Expanded(
+                  child: treinosFiltrados.isEmpty
+                      ? const Center(child: Text('Nenhum treino encontrado nesse periodo.'))
+                      : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _treinos.length,
+              itemCount: treinosFiltrados.length,
               itemBuilder: (context, index) {
-                final t = _treinos[index];
+                final t = treinosFiltrados[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ExpansionTile(
@@ -69,6 +88,9 @@ class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
                   ),
                 );
               },
+            ),
+                ),
+              ],
             ),
     );
   }
