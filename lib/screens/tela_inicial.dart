@@ -18,10 +18,9 @@ class TelaInicial extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.fitness_center, size: 100, color: Colors.white),
+              const Icon(Icons.water_drop, size: 100, color: Colors.white),
               const SizedBox(height: 24),
-              const Text('AquaTrack', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
-              const Text('SÃO CAMILO', style: TextStyle(color: Colors.white70, fontSize: 18)),
+              const Text('HydroTrack', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
               const SizedBox(height: 80),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),

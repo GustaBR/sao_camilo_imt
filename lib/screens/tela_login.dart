@@ -151,7 +151,8 @@ class _TelaLoginState extends State<TelaLogin> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/images/logo.png', height: 60),
+                 const Text('HydroTrack', style: TextStyle(color: const Color(0xFFB30000), 
+                 fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
                   const SizedBox(height: 30),
                   
                   DropdownButtonFormField<String>(
