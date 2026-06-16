@@ -142,7 +142,7 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
           const SnackBar(content: Text('Treino finalizado com sucesso!'), backgroundColor: Colors.green),
         );
 
-        Navigator.popUntil(context, (route) => route.isFirst);
+        Navigator.popUntil(context, (route) => route.settings.name == '/atleta/treino');
       } catch (error) {
         if (!mounted) return;
         _mostrarErro('Erro inesperado ao finalizar treino: $error');
@@ -157,18 +157,18 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pós-sessão'), centerTitle: true, backgroundColor: const Color(0xFFB30000)),
+      appBar: AppBar(title: const Text('Pos-sessao'), centerTitle: true, backgroundColor: const Color(0xFFB30000)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              const Text('Após o treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Apos o treino', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _massaCorporalController,
-                decoration: const InputDecoration(labelText: 'Massa corporal pós-exercício (kg)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Massa corporal pos-exercicio (kg)', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? 'Informe a massa corporal' : null,
               ),
@@ -182,9 +182,9 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _observacaoRoupasController,
-                  decoration: const InputDecoration(labelText: 'Observação sobre roupas', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Observacao sobre roupas', border: OutlineInputBorder()),
                   maxLines: 3,
-                  validator: (v) => v!.isEmpty ? 'Descreva a situação' : null,
+                  validator: (v) => v!.isEmpty ? 'Descreva a situacao' : null,
                 ),
               ],
               const SizedBox(height: 24),
@@ -222,14 +222,15 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isSaving ? null : _finalizarTreino,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('FINALIZAR TREINO', style: TextStyle(fontSize: 16)),
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFB30000)))
+                    : const Text('FINALIZAR TREINO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

@@ -32,7 +32,7 @@ class _NutricionistaDetalhesPageState extends State<NutricionistaDetalhesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.atletaNome), backgroundColor: Colors.green),
+      appBar: AppBar(title: Text(widget.atletaNome), backgroundColor: const Color(0xFFB30000)),
       body: _treinos.isEmpty
           ? const Center(child: Text('Nenhum treino registrado ainda'))
           : ListView.builder(
@@ -45,25 +45,18 @@ class _NutricionistaDetalhesPageState extends State<NutricionistaDetalhesPage> {
                   child: ExpansionTile(
                     leading: const Icon(Icons.local_drink, color: Colors.blue),
                     title: Text('${t.dataFormatada} - ${t.modalidade}'),
-                    subtitle: Text('Ingestão: ${t.fluidosMl} mL'),
+                    subtitle: Text('Ingestao: ${t.fluidosMl} mL'),
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            _infoRow('Duração', '${t.duracaoMinutos} min'),
+                            _infoRow('Duracao', '${t.duracaoMinutos} min'),
                             _infoRow('Fluidos ingeridos', '${t.fluidosMl} mL'),
-                            _infoRow('Massa pré', '${t.massaCorporalPreKg} kg'),
-                            _infoRow('Massa pós', '${t.massaCorporalPosKg} kg'),
+                            _infoRow('Massa pre', '${t.massaCorporalPreKg} kg'),
+                            _infoRow('Massa pos', '${t.massaCorporalPosKg} kg'),
                             _infoRow('Perda de massa', '${t.percentualPerdaMassa.toStringAsFixed(1)}%'),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: t.fluidosMl / 1000,
-                              backgroundColor: Colors.grey[300],
-                              color: Colors.green,
-                              minHeight: 10,
-                            ),
-                            Text('Meta: 1000 mL', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            _infoRow('Nivel de hidratacao', t.nivelHidratacao),
                           ],
                         ),
                       ),

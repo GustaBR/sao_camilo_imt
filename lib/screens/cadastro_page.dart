@@ -44,7 +44,7 @@ class _CadastroPageState extends State<CadastroPage> {
 
   void _cadastrar() async {
     if (_tipoUsuario == null) {
-      _mostrarSnackbar('Selecione o tipo de usuário');
+      _mostrarSnackbar('Selecione o tipo de usuario');
       return;
     }
 
@@ -64,7 +64,7 @@ class _CadastroPageState extends State<CadastroPage> {
         if (!mounted) return;
         setState(() => _isLoading = false);
         if (codigo != null) {
-          _mostrarSnackbar('Cadastro realizado! Seu código: $codigo', isError: false);
+          _mostrarSnackbar('Cadastro realizado! Seu codigo: $codigo', isError: false);
           if (mounted) Navigator.pushReplacementNamed(context, '/login');
         } else {
           _mostrarSnackbar(_db.ultimoErro ?? 'Erro ao cadastrar. Tente novamente.');
@@ -111,9 +111,9 @@ class _CadastroPageState extends State<CadastroPage> {
                 children: [
                   _buildTipoCard('ATLETA', Icons.person, const Color(0xFFB30000), 'atleta'),
                   const SizedBox(width: 12),
-                  _buildTipoCard('MÉDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
+                  _buildTipoCard('MEDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
                   const SizedBox(width: 12),
-                  _buildTipoCard('NUTRI', Icons.restaurant, Colors.green, 'nutricionista'),
+                  _buildTipoCard('NUTRI', Icons.restaurant, const Color(0xFFB30000), 'nutricionista'),
                 ],
               ),
               const SizedBox(height: 24),
@@ -167,7 +167,7 @@ class _CadastroPageState extends State<CadastroPage> {
                     DropdownMenuItem(value: 'masculino', child: Text('Masculino')),
                     DropdownMenuItem(value: 'feminino', child: Text('Feminino')),
                     DropdownMenuItem(value: 'outro', child: Text('Outro')),
-                    DropdownMenuItem(value: 'nao_informado', child: Text('Prefiro não informar')),
+                    DropdownMenuItem(value: 'nao_informado', child: Text('Prefiro nao informar')),
                   ],
                   onChanged: (value) => setState(() => _sexoSelecionado = value),
                   validator: (value) => value == null ? 'Informe seu sexo' : null,
@@ -198,7 +198,7 @@ class _CadastroPageState extends State<CadastroPage> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Informe uma senha';
-                  if (v.length < 6) return 'Mínimo 6 caracteres';
+                  if (v.length < 6) return 'Minimo 6 caracteres';
                   return null;
                 },
               ),
@@ -214,15 +214,19 @@ class _CadastroPageState extends State<CadastroPage> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Confirme sua senha';
-                  if (v != _senhaController.text) return 'As senhas não coincidem';
+                  if (v != _senhaController.text) return 'As senhas nao coincidem';
                   return null;
                 },
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _cadastrar,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(vertical: 16)),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('CADASTRAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading ? const CircularProgressIndicator(color: Color(0xFFB30000)) : const Text('CADASTRAR'),
               ),
             ],
           ),

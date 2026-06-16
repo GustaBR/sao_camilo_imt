@@ -35,6 +35,21 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
     });
   }
 
+  String _calcularIdade(String? dataNascimento) {
+    if (dataNascimento == null || dataNascimento.isEmpty) return 'Nao informado';
+    try {
+      final nascimento = DateTime.parse(dataNascimento);
+      final hoje = DateTime.now();
+      int idade = hoje.year - nascimento.year;
+      if (hoje.month < nascimento.month || (hoje.month == nascimento.month && hoje.day < nascimento.day)) {
+        idade--;
+      }
+      return '$idade anos';
+    } catch (e) {
+      return 'Nao informado';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -51,7 +66,6 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // CARD DO CÓDIGO - VISÍVEL E DESTACADO
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -63,7 +77,7 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                     const Icon(Icons.qr_code, size: 60, color: Colors.white),
                     const SizedBox(height: 16),
                     const Text(
-                      'Seu código exclusivo',
+                      'Seu codigo exclusivo',
                       style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
@@ -85,7 +99,7 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Compartilhe este código com seu Médico e Nutricionista',
+                      'Compartilhe este codigo com seu Medico e Nutricionista',
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
@@ -94,7 +108,6 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // INFORMAÇÕES PESSOAIS
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -107,7 +120,7 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                       children: [
                         Icon(Icons.person, color: Color(0xFFB30000)),
                         SizedBox(width: 8),
-                        Text('Informações Pessoais', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Informacoes Pessoais', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const Divider(height: 24),
@@ -123,12 +136,41 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                       subtitle: Text(_dadosAtleta['email'] ?? 'Carregando...'),
                       dense: true,
                     ),
+                    ListTile(
+                      leading: const Icon(Icons.cake, color: Colors.grey),
+                      title: const Text('Data de nascimento'),
+                      subtitle: Text(_dadosAtleta['dataNascimento'] ?? 'Nao informado'),
+                      dense: true,
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_today, color: Colors.grey),
+                      title: const Text('Idade'),
+                      subtitle: Text(_calcularIdade(_dadosAtleta['dataNascimento'])),
+                      dense: true,
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.straighten, color: Colors.grey),
+                      title: const Text('Altura'),
+                      subtitle: Text(_dadosAtleta['altura'] != null ? '${_dadosAtleta['altura']} cm' : 'Nao informado'),
+                      dense: true,
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.monitor_weight, color: Colors.grey),
+                      title: const Text('Peso'),
+                      subtitle: Text(_dadosAtleta['peso'] != null ? '${_dadosAtleta['peso']} kg' : 'Nao informado'),
+                      dense: true,
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.wc, color: Colors.grey),
+                      title: const Text('Sexo'),
+                      subtitle: Text(_dadosAtleta['sexo'] ?? 'Nao informado'),
+                      dense: true,
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            // ESTATÍSTICAS
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -141,7 +183,7 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                       children: [
                         Icon(Icons.analytics, color: Color(0xFFB30000)),
                         SizedBox(width: 8),
-                        Text('Estatísticas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Estatisticas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const Divider(height: 24),
@@ -166,14 +208,14 @@ class _AtletaPerfilPageState extends State<AtletaPerfilPage> {
                     Row(
                       children: [
                         _buildEstatisticaCard(
-                          titulo: 'Média Borg',
+                          titulo: 'Media Borg',
                           valor: _treinos.isEmpty ? '0' : (_treinos.fold(0, (sum, t) => sum + t.escalaBorg) / _treinos.length).toStringAsFixed(1),
                           icone: Icons.speed,
                           cor: const Color(0xFFB30000),
                         ),
                         const SizedBox(width: 12),
                         _buildEstatisticaCard(
-                          titulo: 'Média Perda %',
+                          titulo: 'Media Perda %',
                           valor: _treinos.isEmpty ? '0%' : (_treinos.fold(0.0, (sum, t) => sum + t.percentualPerdaMassa) / _treinos.length).toStringAsFixed(1) + '%',
                           icone: Icons.water_drop,
                           cor: const Color(0xFFB30000),

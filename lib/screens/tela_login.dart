@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 import 'medico_lista_page.dart';
 import 'nutricionista_lista_page.dart';
+import 'cadastro_page.dart';
 
 class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
@@ -20,7 +21,7 @@ class _TelaLoginState extends State<TelaLogin> {
 
   void _login() async {
     if (_tipoSelecionado == null) {
-      _mostrarSnackbar('Selecione o tipo de usuário');
+      _mostrarSnackbar('Selecione o tipo de usuario');
       return;
     }
 
@@ -44,7 +45,7 @@ class _TelaLoginState extends State<TelaLogin> {
         }
       } else {
         setState(() => _isLoading = false);
-        _mostrarSnackbar('E-mail ou senha inválidos');
+        _mostrarSnackbar('E-mail ou senha invalidos');
       }
     } else if (_tipoSelecionado == 'medico') {
       var medico = await _db.autenticarMedico(email, senha);
@@ -59,7 +60,7 @@ class _TelaLoginState extends State<TelaLogin> {
         }
       } else {
         setState(() => _isLoading = false);
-        _mostrarSnackbar('E-mail ou senha inválidos');
+        _mostrarSnackbar('E-mail ou senha invalidos');
       }
     } else if (_tipoSelecionado == 'nutricionista') {
       var nutri = await _db.autenticarNutricionista(email, senha);
@@ -74,7 +75,7 @@ class _TelaLoginState extends State<TelaLogin> {
         }
       } else {
         setState(() => _isLoading = false);
-        _mostrarSnackbar('E-mail ou senha inválidos');
+        _mostrarSnackbar('E-mail ou senha invalidos');
       }
     }
   }
@@ -102,13 +103,21 @@ class _TelaLoginState extends State<TelaLogin> {
               children: [
                 _buildTipoBotao('ATLETA', Icons.person, const Color(0xFFB30000), 'atleta'),
                 const SizedBox(width: 12),
-                _buildTipoBotao('MÉDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
+                _buildTipoBotao('MEDICO', Icons.medical_services, const Color(0xFFB30000), 'medico'),
                 const SizedBox(width: 12),
-                _buildTipoBotao('NUTRI', Icons.restaurant, Colors.green, 'nutricionista'),
+                _buildTipoBotao('NUTRI', Icons.restaurant, const Color(0xFFB30000), 'nutricionista'),
               ],
             ),
             const SizedBox(height: 32),
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)), keyboardType: TextInputType.emailAddress),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _senhaController,
@@ -117,7 +126,10 @@ class _TelaLoginState extends State<TelaLogin> {
                 labelText: 'Senha',
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _obscureText = !_obscureText)),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -126,14 +138,17 @@ class _TelaLoginState extends State<TelaLogin> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000)),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('ENTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB30000),
+                ),
+                child: _isLoading ? const CircularProgressIndicator(color: Color(0xFFB30000)) : const Text('ENTRAR', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => Navigator.pushReplacementNamed(context, '/cadastro'),
-              child: const Text('Não tem conta? Cadastre-se'),
+              child: const Text('Nao tem conta? Cadastre-se'),
             ),
           ],
         ),
