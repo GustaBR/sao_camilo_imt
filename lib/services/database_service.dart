@@ -327,6 +327,16 @@ class DatabaseService {
     }
   }
 
+  Future<bool> deletarTreino(String treinoId) async {
+    try {
+      await _request('DELETE', '/treinos/${Uri.encodeComponent(treinoId)}');
+      return true;
+    } catch (error) {
+      debugPrint('Erro ao deletar treino: $error');
+      return false;
+    }
+  }
+
   Future<List<SessaoTreino>> getTreinosDoAtleta(String atletaId) async {
     try {
       final data = await _request('GET', '/atletas/${Uri.encodeComponent(atletaId)}/treinos');
@@ -374,7 +384,7 @@ class DatabaseService {
 
   // ========== PROFISSIONAIS ==========
   Future<bool> autenticarProfissional(String usuario, String senha) async {
-final medico = await autenticarMedico(usuario, senha);
+    final medico = await autenticarMedico(usuario, senha);
     if (medico != null) return true;
     
     final nutricionista = await autenticarNutricionista(usuario, senha);

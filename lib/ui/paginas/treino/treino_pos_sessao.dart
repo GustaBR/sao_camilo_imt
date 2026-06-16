@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/radio_group.dart';
 import '../../../services/database_service.dart';
 import '../../../models/sessao_treino.dart';
+import 'dashboard_page.dart';
 
 class TreinoPosSessao extends StatefulWidget {
   final double massaCorporalPre;
@@ -142,7 +143,11 @@ class _TreinoPosSessaoState extends State<TreinoPosSessao> {
           const SnackBar(content: Text('Treino finalizado com sucesso!'), backgroundColor: Colors.green),
         );
 
-        Navigator.popUntil(context, (route) => route.settings.name == '/atleta/treino');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          (route) => false,
+        );
       } catch (error) {
         if (!mounted) return;
         _mostrarErro('Erro inesperado ao finalizar treino: $error');

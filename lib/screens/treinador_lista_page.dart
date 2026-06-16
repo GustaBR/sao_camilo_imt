@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
+import '../services/pdf_service.dart';
 import 'treinador_detalhes_page.dart';
 
 class TreinadorListaPage extends StatefulWidget {
@@ -47,7 +48,7 @@ class _TreinadorListaPageState extends State<TreinadorListaPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Digite o CÓDIGO do atleta:'),
+            const Text('Digite o CODIGO do atleta:'),
             const SizedBox(height: 16),
             TextField(
               controller: _codigoController,
@@ -79,7 +80,7 @@ class _TreinadorListaPageState extends State<TreinadorListaPage> {
                 }
               } else {
                 if (!mounted) return;
-                _mostrarSnackbar('Código de atleta inválido!', isError: true);
+                _mostrarSnackbar('Codigo de atleta invalido!', isError: true);
               }
             },
             child: const Text('Adicionar'),
@@ -140,7 +141,7 @@ class _TreinadorListaPageState extends State<TreinadorListaPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _atletas.isEmpty
-              ? const Center(child: Text('Nenhum atleta vinculado. Use o botão + para adicionar.'))
+              ? const Center(child: Text('Nenhum atleta vinculado. Use o botao + para adicionar.'))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _atletas.length,
@@ -150,7 +151,7 @@ class _TreinadorListaPageState extends State<TreinadorListaPage> {
                       child: ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.directions_run)),
                         title: Text(atleta['nome']),
-                        subtitle: Text('Código: ${atleta['codigo']}'),
+                        subtitle: Text('Codigo: ${atleta['codigo']}'),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _removerAtleta(atleta['codigo'], atleta['nome']),

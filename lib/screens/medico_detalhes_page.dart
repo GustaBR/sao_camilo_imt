@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
+import '../services/pdf_service.dart';
 import '../models/sessao_treino.dart';
-import '../widgets/treino_date_filter.dart';
 
 class MedicoDetalhesPage extends StatefulWidget {
   final String atletaCodigo;
@@ -15,7 +15,6 @@ class MedicoDetalhesPage extends StatefulWidget {
 class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
   final DatabaseService _db = DatabaseService();
   List<SessaoTreino> _treinos = [];
-  DateTimeRange? _periodoFiltro;
 
   @override
   void initState() {
@@ -31,56 +30,48 @@ class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
     });
   }
 
+  Future<void> _exportarTreinoIndividual(SessaoTreino treino) async {
+    await PdfService.gerarTreinoIndividualPdf(treino, widget.atletaNome);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final treinosFiltrados = filtrarTreinosPorPeriodo(_treinos, _periodoFiltro);
-
     return Scaffold(
       appBar: AppBar(title: Text(widget.atletaNome), backgroundColor: const Color(0xFFB30000)),
       body: _treinos.isEmpty
           ? const Center(child: Text('Nenhum treino registrado ainda'))
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: TreinoDateFilter(
-                    periodo: _periodoFiltro,
-                    onChanged: (periodo) => setState(() => _periodoFiltro = periodo),
-                    cor: const Color(0xFFB30000),
-                    total: _treinos.length,
-                    filtrados: treinosFiltrados.length,
-                  ),
-                ),
-                Expanded(
-                  child: treinosFiltrados.isEmpty
-                      ? const Center(child: Text('Nenhum treino encontrado nesse periodo.'))
-                      : ListView.builder(
+          : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: treinosFiltrados.length,
+              itemCount: _treinos.length,
               itemBuilder: (context, index) {
-                final t = treinosFiltrados[index];
+                final t = _treinos[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ExpansionTile(
                     leading: const Icon(Icons.fitness_center),
                     title: Text('${t.dataFormatada} - ${t.modalidade}'),
                     subtitle: Text('Borg: ${t.escalaBorg} | Perda: ${t.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                      onPressed: () => _exportarTreinoIndividual(t),
+                      tooltip: 'Baixar PDF',
+                    ),
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            _infoRow('Duração', '${t.duracaoMinutos} min'),
+                            _infoRow('Duracao', '${t.duracaoMinutos} min'),
                             _infoRow('Temperatura', '${t.temperatura}°C'),
                             _infoRow('Umidade', '${t.umidade}%'),
                             _infoRow('Fluidos', '${t.fluidosMl} mL'),
-                            _infoRow('Massa pré', '${t.massaCorporalPreKg} kg'),
-                            _infoRow('Massa pós', '${t.massaCorporalPosKg} kg'),
+                            _infoRow('Massa pre', '${t.massaCorporalPreKg} kg'),
+                            _infoRow('Massa pos', '${t.massaCorporalPosKg} kg'),
                             _infoRow('Perda', '${t.percentualPerdaMassa.toStringAsFixed(1)}%'),
-                            _infoRow('Sintomas gastro', t.teveSintomasGastro ? 'Sim' : 'Não'),
-                            if (t.sintomasDescricao.isNotEmpty) _infoRow('Descrição', t.sintomasDescricao),
-                            _infoRow('Fadiga', t.teveFadiga ? 'Sim' : 'Não'),
-                            if (t.fadigaDescricao.isNotEmpty) _infoRow('Descrição fadiga', t.fadigaDescricao),
+                            _infoRow('Sintomas gastro', t.teveSintomasGastro ? 'Sim' : 'Nao'),
+                            if (t.sintomasDescricao.isNotEmpty) _infoRow('Descricao', t.sintomasDescricao),
+                            _infoRow('Fadiga', t.teveFadiga ? 'Sim' : 'Nao'),
+                            if (t.fadigaDescricao.isNotEmpty) _infoRow('Descricao fadiga', t.fadigaDescricao),
                           ],
                         ),
                       ),
@@ -88,9 +79,6 @@ class _MedicoDetalhesPageState extends State<MedicoDetalhesPage> {
                   ),
                 );
               },
-            ),
-                ),
-              ],
             ),
     );
   }
