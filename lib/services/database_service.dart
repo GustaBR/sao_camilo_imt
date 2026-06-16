@@ -253,6 +253,10 @@ class DatabaseService {
     return _autenticar(email, senha, 'nutricionista');
   }
 
+  Future<Map<String, dynamic>?> autenticarTreinador(String email, String senha) {
+    return _autenticar(email, senha, 'treinador');
+  }
+
   Future<Map<String, dynamic>?> _autenticar(String email, String senha, String tipo) async {
     try {
       final data = await _request(
@@ -370,10 +374,14 @@ class DatabaseService {
 
   // ========== PROFISSIONAIS ==========
   Future<bool> autenticarProfissional(String usuario, String senha) async {
-    final medico = await autenticarMedico(usuario, senha);
+final medico = await autenticarMedico(usuario, senha);
     if (medico != null) return true;
+    
     final nutricionista = await autenticarNutricionista(usuario, senha);
-    return nutricionista != null;
+    if (nutricionista != null) return true;
+    
+    final treinador = await autenticarTreinador(usuario, senha);
+    return treinador != null;
   }
 
   Map<String, dynamic>? getProfissional(String usuario) {

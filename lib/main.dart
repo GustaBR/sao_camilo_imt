@@ -5,6 +5,7 @@ import 'screens/cadastro_page.dart';
 import 'screens/atleta_perfil_page.dart';
 import 'screens/medico_lista_page.dart';
 import 'screens/nutricionista_lista_page.dart';
+import 'screens/treinador_lista_page.dart';
 import 'ui/paginas/treino/dashboard_page.dart';
 import 'services/database_service.dart';
 
@@ -77,6 +78,9 @@ class MyApp extends StatelessWidget {
     }
     if (tipo == 'nutricionista') {
       return NutricionistaListaPage(profissionalId: id, profissionalNome: nome);
+    }
+    if (tipo == 'treinador') {
+      return TreinadorListaPage(profissionalId: id, profissionalNome: nome);
     }
     return const TelaInicial();
   }
