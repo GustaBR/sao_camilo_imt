@@ -15,7 +15,30 @@ from backend.config.database import get_db
 router = APIRouter(tags=["persistence"])
 
 SCHEMA = "nutri_esportiva"
-VALID_ROLES = {"atleta", "medico", "nutricionista"}
+PROFESSIONAL_CONFIGS = {
+    "medico": {
+        "table": "medicos",
+        "registration_column": "crm",
+        "link_table": "medicos_atletas",
+        "link_column": "medicos_id",
+        "requires_registration": True,
+    },
+    "nutricionista": {
+        "table": "nutricionistas",
+        "registration_column": "crn",
+        "link_table": "nutricionistas_atletas",
+        "link_column": "nutricionistas_id",
+        "requires_registration": True,
+    },
+    "treinador": {
+        "table": "treinadores",
+        "registration_column": None,
+        "link_table": "treinadores_atletas",
+        "link_column": "treinadores_id",
+        "requires_registration": False,
+    },
+}
+VALID_ROLES = {"atleta", *PROFESSIONAL_CONFIGS.keys()}
 VALID_SEXOS = {"masculino", "feminino", "outro", "nao_informado"}
 
 
@@ -40,7 +63,7 @@ class ProfissionalCreateRequest(BaseModel):
     email: str
     senha: str
     tipo: str
-    registro: str
+    registro: str = ""
 
 
 class AtletaUpdateRequest(BaseModel):
@@ -100,7 +123,16 @@ def _role_from_row(row) -> str | None:
         return "medico"
     if row["is_nutricionista"]:
         return "nutricionista"
+    if row["is_treinador"]:
+        return "treinador"
     return None
+
+
+def _professional_config(tipo: str) -> dict:
+    config = PROFESSIONAL_CONFIGS.get(tipo)
+    if config is None:
+        raise HTTPException(status_code=400, detail="Tipo de profissional invalido.")
+    return config
 
 
 def _usuario_response(row, tipo: str) -> dict:
@@ -210,12 +242,14 @@ def _buscar_usuario_por_login(db: Session, email: str, senha: str):
               a.codigo_acesso as codigo,
               a.id is not null as is_atleta,
               m.id is not null as is_medico,
-              n.id is not null as is_nutricionista
+              n.id is not null as is_nutricionista,
+              t.id is not null as is_treinador
             from auth.users u
             join {SCHEMA}.pessoas p on p.auth_user_id = u.id
             left join {SCHEMA}.atletas a on a.id = p.id
             left join {SCHEMA}.medicos m on m.id = p.id
             left join {SCHEMA}.nutricionistas n on n.id = p.id
+            left join {SCHEMA}.treinadores t on t.id = p.id
             where lower(u.email) = lower(:email)
               and u.encrypted_password = crypt(:senha, u.encrypted_password)
               and u.deleted_at is null
@@ -259,10 +293,12 @@ def _buscar_profissional(db: Session, profissional_id: int):
               p.nome,
               p.email,
               m.id is not null as is_medico,
-              n.id is not null as is_nutricionista
+              n.id is not null as is_nutricionista,
+              t.id is not null as is_treinador
             from {SCHEMA}.pessoas p
             left join {SCHEMA}.medicos m on m.id = p.id
             left join {SCHEMA}.nutricionistas n on n.id = p.id
+            left join {SCHEMA}.treinadores t on t.id = p.id
             where p.id = :id
             """
         ),
@@ -275,6 +311,8 @@ def _tipo_profissional(row) -> str | None:
         return "medico"
     if row["is_nutricionista"]:
         return "nutricionista"
+    if row["is_treinador"]:
+        return "treinador"
     return None
 
 
@@ -284,21 +322,18 @@ def _profissional_vinculado_ao_atleta(
     atleta_id: int,
     profissional_tipo: str,
 ) -> bool:
-    if profissional_tipo == "medico":
-        tabela_vinculo = "medicos_atletas"
-        coluna_profissional = "medicos_id"
-    elif profissional_tipo == "nutricionista":
-        tabela_vinculo = "nutricionistas_atletas"
-        coluna_profissional = "nutricionistas_id"
-    else:
+    config = PROFESSIONAL_CONFIGS.get(profissional_tipo)
+    if config is None:
         return False
+    link_table = config["link_table"]
+    link_column = config["link_column"]
 
     vinculo = db.execute(
         text(
             f"""
             select 1
-            from {SCHEMA}.{tabela_vinculo}
-            where {coluna_profissional} = :profissional_id
+            from {SCHEMA}.{link_table}
+            where {link_column} = :profissional_id
               and atletas_id = :atleta_id
             limit 1
             """
@@ -472,26 +507,37 @@ def criar_profissional(payload: ProfissionalCreateRequest, db: Session = Depends
     senha = payload.senha
     tipo = payload.tipo.strip().lower()
     registro = payload.registro.strip().upper()
+    config = _professional_config(tipo)
+    table = config["table"]
+    registration_column = config["registration_column"]
 
-    if tipo not in {"medico", "nutricionista"}:
-        raise HTTPException(status_code=400, detail="Tipo de profissional invalido.")
-    if not nome or not email or not senha or not registro:
-        raise HTTPException(status_code=400, detail="Nome, e-mail, senha e registro sao obrigatorios.")
-
-    tabela = "medicos" if tipo == "medico" else "nutricionistas"
-    coluna_registro = "crm" if tipo == "medico" else "crn"
+    if not nome or not email or not senha:
+        raise HTTPException(status_code=400, detail="Nome, e-mail e senha sao obrigatorios.")
+    if config["requires_registration"] and not registro:
+        raise HTTPException(status_code=400, detail="Registro profissional obrigatorio.")
 
     try:
         pessoa = _criar_auth_user_e_pessoa(db, nome, email, senha)
-        db.execute(
-            text(
-                f"""
-                insert into {SCHEMA}.{tabela} (id, {coluna_registro})
-                values (:id, :registro)
-                """
-            ),
-            {"id": pessoa["id"], "registro": registro},
-        )
+        if registration_column:
+            db.execute(
+                text(
+                    f"""
+                    insert into {SCHEMA}.{table} (id, {registration_column})
+                    values (:id, :registro)
+                    """
+                ),
+                {"id": pessoa["id"], "registro": registro},
+            )
+        else:
+            db.execute(
+                text(
+                    f"""
+                    insert into {SCHEMA}.{table} (id)
+                    values (:id)
+                    """
+                ),
+                {"id": pessoa["id"]},
+            )
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -573,10 +619,12 @@ def listar_atletas_profissional(profissional_id: int, db: Session = Depends(get_
             f"""
             select
               m.id is not null as is_medico,
-              n.id is not null as is_nutricionista
+              n.id is not null as is_nutricionista,
+              t.id is not null as is_treinador
             from {SCHEMA}.pessoas p
             left join {SCHEMA}.medicos m on m.id = p.id
             left join {SCHEMA}.nutricionistas n on n.id = p.id
+            left join {SCHEMA}.treinadores t on t.id = p.id
             where p.id = :id
             """
         ),
@@ -586,14 +634,12 @@ def listar_atletas_profissional(profissional_id: int, db: Session = Depends(get_
     if not profissional:
         raise HTTPException(status_code=404, detail="Profissional nao encontrado.")
 
-    if profissional["is_medico"]:
-        tabela_vinculo = "medicos_atletas"
-        coluna_profissional = "medicos_id"
-    elif profissional["is_nutricionista"]:
-        tabela_vinculo = "nutricionistas_atletas"
-        coluna_profissional = "nutricionistas_id"
-    else:
+    tipo_profissional = _tipo_profissional(profissional)
+    if tipo_profissional is None:
         raise HTTPException(status_code=400, detail="Pessoa nao e profissional.")
+    config = _professional_config(tipo_profissional)
+    link_table = config["link_table"]
+    link_column = config["link_column"]
 
     rows = db.execute(
         text(
@@ -603,10 +649,10 @@ def listar_atletas_profissional(profissional_id: int, db: Session = Depends(get_
               p.nome,
               p.email,
               a.codigo_acesso as codigo
-            from {SCHEMA}.{tabela_vinculo} pa
+            from {SCHEMA}.{link_table} pa
             join {SCHEMA}.atletas a on a.id = pa.atletas_id
             join {SCHEMA}.pessoas p on p.id = a.id
-            where pa.{coluna_profissional} = :id
+            where pa.{link_column} = :id
             order by p.nome
             """
         ),
@@ -634,10 +680,12 @@ def adicionar_atleta_profissional(
             f"""
             select
               m.id is not null as is_medico,
-              n.id is not null as is_nutricionista
+              n.id is not null as is_nutricionista,
+              t.id is not null as is_treinador
             from {SCHEMA}.pessoas p
             left join {SCHEMA}.medicos m on m.id = p.id
             left join {SCHEMA}.nutricionistas n on n.id = p.id
+            left join {SCHEMA}.treinadores t on t.id = p.id
             where p.id = :id
             """
         ),
@@ -647,20 +695,18 @@ def adicionar_atleta_profissional(
     if not profissional:
         raise HTTPException(status_code=404, detail="Profissional nao encontrado.")
 
-    if profissional["is_medico"]:
-        tabela_vinculo = "medicos_atletas"
-        coluna_profissional = "medicos_id"
-    elif profissional["is_nutricionista"]:
-        tabela_vinculo = "nutricionistas_atletas"
-        coluna_profissional = "nutricionistas_id"
-    else:
+    tipo_profissional = _tipo_profissional(profissional)
+    if tipo_profissional is None:
         raise HTTPException(status_code=400, detail="Pessoa nao e profissional.")
+    config = _professional_config(tipo_profissional)
+    link_table = config["link_table"]
+    link_column = config["link_column"]
 
     try:
         result = db.execute(
             text(
                 f"""
-                insert into {SCHEMA}.{tabela_vinculo} ({coluna_profissional}, atletas_id)
+                insert into {SCHEMA}.{link_table} ({link_column}, atletas_id)
                 values (:profissional_id, :atleta_id)
                 on conflict do nothing
                 """
@@ -685,25 +731,30 @@ def remover_atleta_profissional(
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta nao encontrado.")
 
-    deleted = 0
-    for tabela_vinculo, coluna_profissional in [
-        ("medicos_atletas", "medicos_id"),
-        ("nutricionistas_atletas", "nutricionistas_id"),
-    ]:
-        result = db.execute(
-            text(
-                f"""
-                delete from {SCHEMA}.{tabela_vinculo}
-                where {coluna_profissional} = :profissional_id
-                  and atletas_id = :atleta_id
-                """
-            ),
-            {"profissional_id": profissional_id, "atleta_id": atleta["id"]},
-        )
-        deleted += result.rowcount or 0
+    profissional = _buscar_profissional(db, profissional_id)
+    if not profissional:
+        raise HTTPException(status_code=404, detail="Profissional nao encontrado.")
+
+    tipo_profissional = _tipo_profissional(profissional)
+    if tipo_profissional is None:
+        raise HTTPException(status_code=400, detail="Pessoa nao e profissional.")
+    config = _professional_config(tipo_profissional)
+    link_table = config["link_table"]
+    link_column = config["link_column"]
+
+    result = db.execute(
+        text(
+            f"""
+            delete from {SCHEMA}.{link_table}
+            where {link_column} = :profissional_id
+              and atletas_id = :atleta_id
+            """
+        ),
+        {"profissional_id": profissional_id, "atleta_id": atleta["id"]},
+    )
 
     db.commit()
-    return {"ok": deleted > 0}
+    return {"ok": (result.rowcount or 0) > 0}
 
 
 @router.get("/atletas/{identificador}/notas")
