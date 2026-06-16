@@ -39,7 +39,7 @@ class _NutricionistaListaPageState extends State<NutricionistaListaPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Digite o CÓDIGO do atleta:'),
+            const Text('Digite o CODIGO do atleta:'),
             const SizedBox(height: 16),
             TextField(
               controller: _codigoController,
@@ -68,7 +68,7 @@ class _NutricionistaListaPageState extends State<NutricionistaListaPage> {
                 }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Código inválido!'), backgroundColor: Colors.red),
+                  const SnackBar(content: Text('Codigo invalido!'), backgroundColor: Colors.red),
                 );
               }
             },
@@ -117,11 +117,11 @@ class _NutricionistaListaPageState extends State<NutricionistaListaPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.profissionalNome} - Atletas'),
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFFB30000),
         actions: [IconButton(icon: const Icon(Icons.logout), onPressed: _sair)],
       ),
       body: _atletas.isEmpty
-          ? const Center(child: Text('Nenhum atleta vinculado. Use o código para adicionar.'))
+          ? const Center(child: Text('Nenhum atleta vinculado. Use o codigo para adicionar.'))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _atletas.length,
@@ -131,7 +131,7 @@ class _NutricionistaListaPageState extends State<NutricionistaListaPage> {
                   child: ListTile(
                     leading: const CircleAvatar(child: Icon(Icons.person)),
                     title: Text(atleta['nome']),
-                    subtitle: Text('Código: ${atleta['codigo']}'),
+                    subtitle: Text('Codigo: ${atleta['codigo']}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _removerAtleta(atleta['codigo'], atleta['nome']),
@@ -153,7 +153,7 @@ class _NutricionistaListaPageState extends State<NutricionistaListaPage> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _adicionarAtleta,
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFFB30000),
         child: const Icon(Icons.add),
       ),
     );

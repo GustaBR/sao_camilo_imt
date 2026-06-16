@@ -40,6 +40,10 @@ dependencies:
   shared_preferences: ^2.3.3
   mask_text_input_formatter: ^2.9.0
 
+  # PDF e Printing para exportar historico de treino
+  pdf: ^3.10.4
+  printing: ^5.11.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

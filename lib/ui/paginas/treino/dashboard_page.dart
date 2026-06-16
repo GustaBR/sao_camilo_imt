@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/database_service.dart';
+import '../../../services/pdf_service.dart';
 import '../../../models/sessao_treino.dart';
 import '../../../widgets/treino_date_filter.dart';
 import 'treino_pre_sessao.dart';
@@ -16,6 +17,7 @@ class _DashboardPageState extends State<DashboardPage> {
   List<SessaoTreino> _historico = [];
   DateTimeRange? _periodoFiltro;
   bool _isLoading = true;
+  String? _atletaNome;
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _carregarHistorico() async {
     final ativo = _db.getAtivoLogado();
     if (ativo != null) {
+      _atletaNome = ativo['nome'];
       final historico = await _db.getTreinosDoAtleta(ativo['id']);
       if (!mounted) return;
       setState(() {
@@ -50,6 +53,16 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
+  Future<void> _exportarPdf() async {
+    if (_historico.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum treino para exportar'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    await PdfService.gerarHistoricoPdf(_historico, _atletaNome ?? 'Atleta');
+  }
+
   @override
   Widget build(BuildContext context) {
     final ativo = _db.getAtivoLogado();
@@ -62,7 +75,12 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: const Color(0xFFB30000),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+            onPressed: _exportarPdf,
+            tooltip: 'Exportar PDF',
+          ),
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () {
               if (ativo != null) {
                 Navigator.pushNamed(
@@ -74,7 +92,7 @@ class _DashboardPageState extends State<DashboardPage> {
             },
             tooltip: 'Meu Perfil',
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _sair, tooltip: 'Sair'),
+          IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: _sair, tooltip: 'Sair'),
         ],
       ),
       body: _isLoading
@@ -98,9 +116,13 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: _iniciarTreino,
-                            icon: const Icon(Icons.play_arrow),
-                            label: const Text('INICIAR NOVO TREINO', style: TextStyle(fontSize: 16)),
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB30000), padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            icon: const Icon(Icons.play_arrow, color: Color(0xFFB30000)),
+                            label: const Text('INICIAR NOVO TREINO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFB30000))),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
                         ],
                       ),
@@ -115,13 +137,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Histórico de Treinos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          const Text('Historico de Treinos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 16),
                           if (_historico.isEmpty)
                             const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(32),
-                                child: Text('Nenhum treino registrado ainda.\nInicie um novo treino!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                                child: Text('Nenhum treino registrado ainda. Inicie um novo treino!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                               ),
                             )
                           else ...[
@@ -153,7 +175,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   child: ExpansionTile(
                                     leading: CircleAvatar(backgroundColor: const Color(0xFFB30000).withOpacity(0.1), child: const Icon(Icons.fitness_center, color: Color(0xFFB30000))),
                                     title: Text('${t.dataFormatada} - ${t.modalidade}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    subtitle: Text('Duração: ${t.duracaoMinutos} min | Borg: ${t.escalaBorg}'),
+                                    subtitle: Text('Duracao: ${t.duracaoMinutos} min | Borg: ${t.escalaBorg}'),
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(16),
@@ -162,21 +184,39 @@ class _DashboardPageState extends State<DashboardPage> {
                                           children: [
                                             _infoRow('Data', t.dataFormatada),
                                             _infoRow('Modalidade', t.modalidade),
-                                            _infoRow('Duração', '${t.duracaoMinutos} min'),
+                                            _infoRow('Duracao', '${t.duracaoMinutos} min'),
+                                            _infoRow('Duracao real', '${t.duracaoRealSegundos ~/ 60} min'),
                                             const Divider(),
                                             _infoRow('Temperatura', '${t.temperatura}°C'),
                                             _infoRow('Umidade', '${t.umidade}%'),
+                                            _infoRow('Sensacao termica', '${t.sensacaoTermica}°C'),
+                                            _infoRow('Vento', t.vento),
+                                            _infoRow('Exposicao solar', t.exposicaoSolar),
                                             const Divider(),
                                             _infoRow('Fluidos ingeridos', '${t.fluidosMl} mL'),
-                                            _infoRow('Massa pré', '${t.massaCorporalPreKg} kg'),
-                                            _infoRow('Massa pós', '${t.massaCorporalPosKg} kg'),
+                                            _infoRow('Alimentos com agua', t.alimentosAgua),
+                                            _infoRow('Volume urinario', '${t.volumeUrinarioMl} mL'),
+                                            const Divider(),
+                                            _infoRow('Massa pre', '${t.massaCorporalPreKg} kg'),
+                                            _infoRow('Massa pos', '${t.massaCorporalPosKg} kg'),
                                             _infoRow('Perda de massa', '${t.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                                            _infoRow('Cor da urina', t.corUrina),
+                                            _infoRow('Vestimenta', t.vestimenta),
+                                            _infoRow('Equipamento', t.equipamento),
                                             const Divider(),
                                             _infoRow('Escala de Borg', '${t.escalaBorg}/20'),
-                                            _infoRow('Sintomas gastro', t.teveSintomasGastro ? 'Sim' : 'Não'),
-                                            if (t.sintomasDescricao.isNotEmpty) _infoRow('Descrição', t.sintomasDescricao),
-                                            _infoRow('Fadiga', t.teveFadiga ? 'Sim' : 'Não'),
-                                            if (t.fadigaDescricao.isNotEmpty) _infoRow('Descrição fadiga', t.fadigaDescricao),
+                                            _infoRow('Estava com sede', t.estaComSede ? 'Sim' : 'Nao'),
+                                            _infoRow('Sintomas pre-treino', t.sintomasPreDescricao.isNotEmpty ? t.sintomasPreDescricao : 'Nenhum'),
+                                            _infoRow('Historico de hidratacao', t.historicoHidratacao),
+                                            const Divider(),
+                                            _infoRow('Roupas encharcadas', t.roupasEncharcadas ? 'Sim' : 'Nao'),
+                                            _infoRow('Troca de vestimenta', t.trocaVestimenta ? 'Sim' : 'Nao'),
+                                            if (t.observacaoRoupas.isNotEmpty) _infoRow('Observacao roupas', t.observacaoRoupas),
+                                            const Divider(),
+                                            _infoRow('Sintomas gastro', t.teveSintomasGastro ? 'Sim' : 'Nao'),
+                                            if (t.sintomasDescricao.isNotEmpty) _infoRow('Descricao sintomas', t.sintomasDescricao),
+                                            _infoRow('Fadiga', t.teveFadiga ? 'Sim' : 'Nao'),
+                                            if (t.fadigaDescricao.isNotEmpty) _infoRow('Descricao fadiga', t.fadigaDescricao),
                                           ],
                                         ),
                                       ),
@@ -201,7 +241,7 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          SizedBox(width: 120, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54))),
+          SizedBox(width: 150, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54))),
           Expanded(child: Text(value)),
         ],
       ),

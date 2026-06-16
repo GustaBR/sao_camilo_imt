@@ -38,7 +38,6 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     _treinos = widget.treinos;
     _tabController = TabController(length: 2, vsync: this);
     _carregarNotas();
-    print('Detalhes do atleta: ${widget.atletaNome}, ${_treinos.length} treinos'); // Debug
   }
 
   @override
@@ -67,7 +66,7 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     final profissional = _db.getProfissionalLogado();
     if (profissional == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profissional não logado'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Profissional nao logado'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -106,7 +105,7 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'HISTÓRICO', icon: Icon(Icons.fitness_center)),
+            Tab(text: 'HISTORICO', icon: Icon(Icons.fitness_center)),
             Tab(text: 'NOTAS', icon: Icon(Icons.note)),
           ],
         ),
@@ -114,7 +113,6 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Aba Histórico
           RefreshIndicator(
             onRefresh: _recarregarTreinos,
             child: _treinos.isEmpty
@@ -126,7 +124,7 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
                         const SizedBox(height: 16),
                         const Text('Nenhum treino registrado', style: TextStyle(fontSize: 18, color: Colors.grey)),
                         const SizedBox(height: 8),
-                        Text('O atleta ${widget.atletaNome} ainda não finalizou nenhum treino',
+                        Text('O atleta ${widget.atletaNome} ainda nao finalizou nenhum treino',
                             style: TextStyle(color: Colors.grey[400])),
                       ],
                     ),
@@ -137,7 +135,6 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
                     itemBuilder: (context, index) => _buildTreinoCard(_treinos[index]),
                   ),
           ),
-          // Aba Notas
           _buildNotasTab(),
         ],
       ),
@@ -224,66 +221,52 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
           '${treino.dataFormatada} - ${treino.modalidade}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Duração: ${treino.duracaoMinutos} min | Borg: ${treino.escalaBorg}'),
+        subtitle: Text('Duracao: ${treino.duracaoMinutos} min | Borg: ${treino.escalaBorg}'),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow('Data', treino.dataFormatada),
+                _infoRow('Data', treino.dataFormatada),
+                _infoRow('Modalidade', treino.modalidade),
+                _infoRow('Duracao', '${treino.duracaoMinutos} minutos'),
+                _infoRow('Duracao real', '${treino.duracaoRealSegundos ~/ 60} minutos'),
                 const Divider(),
-                _buildInfoRow('Modalidade', treino.modalidade),
+                _infoRow('Temperatura', '${treino.temperatura}°C'),
+                _infoRow('Umidade', '${treino.umidade}%'),
+                _infoRow('Sensacao termica', '${treino.sensacaoTermica}°C'),
+                _infoRow('Vento', treino.vento),
+                _infoRow('Exposicao solar', treino.exposicaoSolar),
                 const Divider(),
-                _buildInfoRow('Duração', '${treino.duracaoMinutos} minutos'),
+                _infoRow('Ingestao de fluidos', '${treino.fluidosMl} mL'),
+                _infoRow('Alimentos com agua', treino.alimentosAgua),
+                _infoRow('Volume urinario', '${treino.volumeUrinarioMl} mL'),
                 const Divider(),
-                _buildInfoRow('Temperatura', '${treino.temperatura}°C'),
-                _buildInfoRow('Umidade', '${treino.umidade}%'),
+                _infoRow('Massa corporal pre', '${treino.massaCorporalPreKg} kg'),
+                _infoRow('Massa corporal pos', '${treino.massaCorporalPosKg} kg'),
+                _infoRow('Perda de massa', '${treino.percentualPerdaMassa.toStringAsFixed(1)}%'),
+                _infoRow('Cor da urina', treino.corUrina),
+                _infoRow('Vestimenta', treino.vestimenta),
+                _infoRow('Equipamento', treino.equipamento),
                 const Divider(),
-                _buildInfoRow('Ingestão de fluidos', '${treino.fluidosMl} mL'),
+                _infoRow('Escala de Borg', '${treino.escalaBorg}/20'),
+                _infoRow('Estava com sede', treino.estaComSede ? 'Sim' : 'Nao'),
+                _infoRow('Sintomas pre-treino', treino.sintomasPreDescricao.isNotEmpty ? treino.sintomasPreDescricao : 'Nenhum'),
+                _infoRow('Historico de hidratacao', treino.historicoHidratacao),
                 const Divider(),
-                _buildInfoRow('Massa corporal pré', '${treino.massaCorporalPreKg} kg'),
-                _buildInfoRow('Massa corporal pós', '${treino.massaCorporalPosKg} kg'),
-                _buildInfoRow('Perda de massa', '${treino.percentualPerdaMassa.toStringAsFixed(1)}%'),
-                const Divider(),
-                _buildInfoRow('Escala de Borg', '${treino.escalaBorg}/20'),
+                _infoRow('Roupas encharcadas', treino.roupasEncharcadas ? 'Sim' : 'Nao'),
+                _infoRow('Troca de vestimenta', treino.trocaVestimenta ? 'Sim' : 'Nao'),
+                if (treino.observacaoRoupas.isNotEmpty) _infoRow('Observacao roupas', treino.observacaoRoupas),
                 const Divider(),
                 if (widget.profissionalTipo == 'medico') ...[
-                  _buildInfoRow('Sintomas gastrointestinais', treino.teveSintomasGastro ? 'Sim' : 'Não'),
-                  if (treino.sintomasDescricao.isNotEmpty)
-                    _buildInfoRow('Descrição sintomas', treino.sintomasDescricao),
-                  _buildInfoRow('Fadiga', treino.teveFadiga ? 'Sim' : 'Não'),
-                  if (treino.fadigaDescricao.isNotEmpty)
-                    _buildInfoRow('Descrição fadiga', treino.fadigaDescricao),
+                  _infoRow('Sintomas gastrointestinais', treino.teveSintomasGastro ? 'Sim' : 'Nao'),
+                  if (treino.sintomasDescricao.isNotEmpty) _infoRow('Descricao sintomas', treino.sintomasDescricao),
+                  _infoRow('Fadiga', treino.teveFadiga ? 'Sim' : 'Nao'),
+                  if (treino.fadigaDescricao.isNotEmpty) _infoRow('Descricao fadiga', treino.fadigaDescricao),
                 ],
                 if (widget.profissionalTipo == 'nutricionista') ...[
-                  _buildInfoRow('Nível de hidratação', _getNivelHidratacao(treino.fluidosMl)),
-                  const SizedBox(height: 8),
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                value: treino.fluidosMl / 1000,
-                                backgroundColor: Colors.grey[300],
-                                color: Colors.green,
-                                minHeight: 8,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text('${((treino.fluidosMl / 1000) * 100).toInt()}%',
-                                style: const TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Meta: 1000 mL por treino', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                      ],
-                    ),
-                  ),
+                  _infoRow('Nivel de hidratacao', treino.nivelHidratacao),
                 ],
               ],
             ),
@@ -293,26 +276,19 @@ class _DetalhesAtletaPageState extends State<DetalhesAtletaPage>
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 150,
             child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black54)),
           ),
           Expanded(child: Text(value)),
         ],
       ),
     );
-  }
-
-  String _getNivelHidratacao(int fluidosMl) {
-    if (fluidosMl >= 1000) return "Excelente";
-    if (fluidosMl >= 700) return "Boa";
-    if (fluidosMl >= 500) return "Regular";
-    return "Atenção - Baixa ingestão";
   }
 }
