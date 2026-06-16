@@ -20,7 +20,7 @@ class TelaInicial extends StatelessWidget {
             children: [
               const Icon(Icons.fitness_center, size: 100, color: Colors.white),
               const SizedBox(height: 24),
-              const Text('NUTRIESPORTIVA', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
+              const Text('AquaTrack', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
               const Text('SÃO CAMILO', style: TextStyle(color: Colors.white70, fontSize: 18)),
               const SizedBox(height: 80),
               Padding(
